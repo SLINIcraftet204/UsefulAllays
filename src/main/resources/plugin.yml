@@ -1,0 +1,46 @@
+name: UsefulAllays
+version: ${version}
+main: at.slini204.usefulallays.UsefulAllaysPlugin
+api-version: '1.21'
+author: SLINIcraftet204
+description: Make Allays more useful and more like pets.
+website: https://github.com/SLINIcraftet204/UsefulAllays
+
+commands:
+  usefulallays:
+    description: Main command for UsefulAllays.
+    usage: /usefulallays [reload|list]
+    aliases: [ua]
+    permission: usefulallays.command
+
+permissions:
+  usefulallays.command:
+    description: Allows using the UsefulAllays command.
+    default: true
+  usefulallays.claim:
+    description: Allows claiming free Allays.
+    default: true
+  usefulallays.gui:
+    description: Allows opening the Allay GUI.
+    default: true
+  usefulallays.upgrade:
+    description: Allows upgrading owned Allays.
+    default: true
+  usefulallays.admin.reload:
+    description: Allows reloading UsefulAllays.
+    default: op
+  usefulallays.admin.bypass:
+    description: Bypasses ownership checks.
+    default: op
+  usefulallays.limit.1:
+    description: Example permission for external limit handling.
+    default: false
+  usefulallays.limit.3:
+    description: Example permission for external limit handling.
+    default: false
+  usefulallays.limit.5:
+    description: Example permission for external limit handling.
+    default: false
+  usefulallays.limit.unlimited:
+    description: Allows unlimited claimed Allays.
+    default: op

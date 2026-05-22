@@ -1,0 +1,30 @@
+prefix: "&bUsefulAllays &8» &7"
+
+plugin:
+  reloaded: "&aConfig and messages reloaded."
+  noPermission: "&cYou do not have permission for this."
+  playerOnly: "&cOnly players can use this command."
+  unknownCommand: "&cUnknown command. Use &e/usefulallays&c."
+
+claim:
+  disabled: "&cClaiming Allays is currently disabled."
+  noPermission: "&cYou are not allowed to claim Allays."
+  wrongItem: "&cYou need &e{item}&c to claim this Allay."
+  success: "&aThis Allay now belongs to you."
+  alreadyYours: "&eThis Allay already belongs to you."
+  alreadyOwned: "&cThis Allay already belongs to another player."
+  limitReached: "&cYou already reached your Allay limit of &e{limit}&c."
+
+allay:
+  protected: "&cThis Allay belongs to another player."
+  guiOpened: "&7Opening Allay settings."
+  list: "&7Loaded claimed Allays: &e{count}"
+  modeChanged: "&7Allay mode changed to &e{mode}&7."
+  upgraded: "&aYour Allay is now level &e{level}&a."
+  maxLevel: "&eThis Allay is already at the highest configured level."
+  missingUpgradeItems: "&cYou do not have the required items for this upgrade."
+  filterNeedItem: "&ePick up an item with your cursor and click the filter slot to add or remove it."
+  filterBlacklisted: "&cThis item is blacklisted for Allay collection."
+  filterFull: "&cThis Allay has no free filter slots left. Current limit: &e{slots}&c."
+  filterAdded: "&aAdded &e{item}&a to this Allay's filters."
+  filterRemoved: "&eRemoved &6{item}&e from this Allay's filters."

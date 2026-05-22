@@ -1,0 +1,83 @@
+configVersion: 1
+
+claiming:
+  enabled: true
+  item: ECHO_SHARD
+  consumeItem: true
+  maxAllaysPerPlayer: 3
+  allowClaimAlreadyHoldingItem: true
+
+display:
+  showName: true
+  nameFormat: "&b{owner}'s Allay &7[Lv. {level}]"
+
+follow:
+  enabled: true
+  checkIntervalTicks: 40
+  teleportAfterDistance: 48.0
+  teleportOnPlayerTeleport: true
+  teleportOnWorldChange: true
+  teleportOnJoin: true
+  teleportOnRespawn: true
+
+protection:
+  preventOtherPlayersInteract: true
+  preventOtherPlayersDamage: true
+  ownerCanDamage: false
+
+collection:
+  enabled: true
+  scanIntervalTicks: 30
+  requireLoadedOwner: true
+  dropToOwnerInventory: true
+  maxItemsPerAllayPerScan: 8
+  blacklist:
+    - BEDROCK
+    - BARRIER
+    - COMMAND_BLOCK
+    - CHAIN_COMMAND_BLOCK
+    - REPEATING_COMMAND_BLOCK
+    - STRUCTURE_BLOCK
+    - STRUCTURE_VOID
+
+levels:
+  1:
+    filterSlots: 1
+    pickupRadius: 12.0
+    carryStacks: 1
+    teleportDistance: 48.0
+  2:
+    filterSlots: 3
+    pickupRadius: 16.0
+    carryStacks: 2
+    teleportDistance: 64.0
+  3:
+    filterSlots: 5
+    pickupRadius: 20.0
+    carryStacks: 3
+    teleportDistance: 80.0
+  4:
+    filterSlots: 9
+    pickupRadius: 24.0
+    carryStacks: 5
+    teleportDistance: 96.0
+
+upgradeCosts:
+  2:
+    items:
+      EMERALD: 16
+      AMETHYST_SHARD: 8
+  3:
+    items:
+      EMERALD: 32
+      DIAMOND: 4
+      AMETHYST_SHARD: 16
+  4:
+    items:
+      EMERALD_BLOCK: 4
+      DIAMOND: 16
+      ECHO_SHARD: 1
+
+worlds:
+  disabled:
+    - example_disabled_world

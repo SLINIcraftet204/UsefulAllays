@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Runtime/test server
+run/
+server/
+plugins/UsefulAllays/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
