@@ -7,6 +7,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public final class MessageService {
@@ -21,7 +25,20 @@ public final class MessageService {
 
     public void reload() {
         File file = new File(plugin.getDataFolder(), "messages.yml");
-        messages = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration loaded = YamlConfiguration.loadConfiguration(file);
+
+        try (InputStream stream = plugin.getResource("messages.yml")) {
+            if (stream != null) {
+                YamlConfiguration defaults = YamlConfiguration.loadConfiguration(new InputStreamReader(stream, StandardCharsets.UTF_8));
+                loaded.setDefaults(defaults);
+                loaded.options().copyDefaults(true);
+                loaded.save(file);
+            }
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not update messages.yml defaults: " + exception.getMessage());
+        }
+
+        messages = loaded;
     }
 
     public void send(CommandSender sender, String path) {

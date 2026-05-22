@@ -22,6 +22,7 @@ public final class PdcAllayRepository implements AllayRepository {
     private final NamespacedKey ownerKey;
     private final NamespacedKey ownerNameKey;
     private final NamespacedKey levelKey;
+    private final NamespacedKey customNameKey;
     private final NamespacedKey modeKey;
     private final NamespacedKey filtersKey;
     private final NamespacedKey claimedAtKey;
@@ -30,6 +31,7 @@ public final class PdcAllayRepository implements AllayRepository {
         this.ownerKey = new NamespacedKey(plugin, "owner_uuid");
         this.ownerNameKey = new NamespacedKey(plugin, "owner_name");
         this.levelKey = new NamespacedKey(plugin, "level");
+        this.customNameKey = new NamespacedKey(plugin, "custom_name");
         this.modeKey = new NamespacedKey(plugin, "mode");
         this.filtersKey = new NamespacedKey(plugin, "filters");
         this.claimedAtKey = new NamespacedKey(plugin, "claimed_at");
@@ -55,6 +57,28 @@ public final class PdcAllayRepository implements AllayRepository {
     }
 
     @Override
+    public Optional<String> ownerNameOf(Allay allay) {
+        String value = allay.getPersistentDataContainer().get(ownerNameKey, PersistentDataType.STRING);
+        return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
+    }
+
+    @Override
+    public Optional<String> customNameOf(Allay allay) {
+        String value = allay.getPersistentDataContainer().get(customNameKey, PersistentDataType.STRING);
+        return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
+    }
+
+    @Override
+    public void setCustomName(Allay allay, String customName) {
+        if (customName == null || customName.isBlank()) {
+            allay.getPersistentDataContainer().remove(customNameKey);
+            return;
+        }
+
+        allay.getPersistentDataContainer().set(customNameKey, PersistentDataType.STRING, customName.trim());
+    }
+
+    @Override
     public void claim(Allay allay, UUID ownerUuid, String ownerName) {
         PersistentDataContainer pdc = allay.getPersistentDataContainer();
         pdc.set(ownerKey, PersistentDataType.STRING, ownerUuid.toString());
@@ -72,6 +96,7 @@ public final class PdcAllayRepository implements AllayRepository {
         pdc.remove(ownerKey);
         pdc.remove(ownerNameKey);
         pdc.remove(levelKey);
+        pdc.remove(customNameKey);
         pdc.remove(modeKey);
         pdc.remove(filtersKey);
         pdc.remove(claimedAtKey);

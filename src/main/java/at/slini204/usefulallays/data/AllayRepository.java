@@ -14,6 +14,12 @@ public interface AllayRepository {
 
     Optional<UUID> ownerOf(Allay allay);
 
+    Optional<String> ownerNameOf(Allay allay);
+
+    Optional<String> customNameOf(Allay allay);
+
+    void setCustomName(Allay allay, String customName);
+
     void claim(Allay allay, UUID ownerUuid, String ownerName);
 
     void release(Allay allay);

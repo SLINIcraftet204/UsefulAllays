@@ -19,6 +19,7 @@ public final class PluginSettings {
     private final boolean consumeClaimItem;
     private final int maxAllaysPerPlayer;
     private final boolean showName;
+    private final String defaultAllayName;
     private final String nameFormat;
     private final boolean followEnabled;
     private final long followIntervalTicks;
@@ -44,6 +45,7 @@ public final class PluginSettings {
             boolean consumeClaimItem,
             int maxAllaysPerPlayer,
             boolean showName,
+            String defaultAllayName,
             String nameFormat,
             boolean followEnabled,
             long followIntervalTicks,
@@ -68,6 +70,7 @@ public final class PluginSettings {
         this.consumeClaimItem = consumeClaimItem;
         this.maxAllaysPerPlayer = maxAllaysPerPlayer;
         this.showName = showName;
+        this.defaultAllayName = defaultAllayName;
         this.nameFormat = nameFormat;
         this.followEnabled = followEnabled;
         this.followIntervalTicks = followIntervalTicks;
@@ -97,7 +100,8 @@ public final class PluginSettings {
                 config.getBoolean("claiming.consumeItem", true),
                 Math.max(0, config.getInt("claiming.maxAllaysPerPlayer", 3)),
                 config.getBoolean("display.showName", true),
-                config.getString("display.nameFormat", "&b{owner}'s Allay &7[Lv. {level}]"),
+                config.getString("display.defaultAllayName", "{owner}'s Allay"),
+                config.getString("display.nameFormat", "&b{allay} &7[Lv. {level}]"),
                 config.getBoolean("follow.enabled", true),
                 Math.max(5L, config.getLong("follow.checkIntervalTicks", 40L)),
                 Math.max(1.0, config.getDouble("follow.teleportAfterDistance", 48.0)),
@@ -179,6 +183,10 @@ public final class PluginSettings {
 
     public boolean showName() {
         return showName;
+    }
+
+    public String defaultAllayName() {
+        return defaultAllayName;
     }
 
     public String nameFormat() {

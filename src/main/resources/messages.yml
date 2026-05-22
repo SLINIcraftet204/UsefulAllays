@@ -23,8 +23,17 @@ allay:
   upgraded: "&aYour Allay is now level &e{level}&a."
   maxLevel: "&eThis Allay is already at the highest configured level."
   missingUpgradeItems: "&cYou do not have the required items for this upgrade."
-  filterNeedItem: "&ePick up an item with your cursor and click the filter slot to add or remove it."
+  filterNeedItem: "&ePick up an item from your inventory and click one of the filter slots to add it. Click an existing filter with an empty cursor to remove it."
   filterBlacklisted: "&cThis item is blacklisted for Allay collection."
   filterFull: "&cThis Allay has no free filter slots left. Current limit: &e{slots}&c."
+  filterLocked: "&eThis filter slot is locked. Upgrade the Allay to unlock more slots."
   filterAdded: "&aAdded &e{item}&a to this Allay's filters."
   filterRemoved: "&eRemoved &6{item}&e from this Allay's filters."
+
+rename:
+  usage: "&eUse &6/{label} rename <name>&e or &6/{label} rename reset&e."
+  guiHint: "&7Use &e/ua rename <name>&7 near your Allay to rename it. Use &e/ua rename reset&7 to reset it."
+  noOwnedAllayNearby: "&cThere is no owned Allay close enough to rename."
+  tooLong: "&cThat name is too long. Maximum length: &e{max}&c characters."
+  success: "&aRenamed your Allay to &e{name}&a."
+  reset: "&eYour Allay name was reset."

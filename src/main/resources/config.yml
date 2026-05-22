@@ -9,7 +9,10 @@ claiming:
 
 display:
   showName: true
-  nameFormat: "&b{owner}'s Allay &7[Lv. {level}]"
+  # Used until a player sets a custom name with /ua rename <name>.
+  defaultAllayName: "{owner}'s Allay"
+  # Placeholders: {owner}, {allay}, {level}
+  nameFormat: "&b{allay} &7[Lv. {level}]"
 
 follow:
   enabled: true

@@ -1,7 +1,6 @@
 package at.slini204.usefulallays.service;
 
 import at.slini204.usefulallays.UsefulAllaysPlugin;
-import at.slini204.usefulallays.config.MessageService;
 import at.slini204.usefulallays.data.AllayRepository;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Player;
@@ -13,10 +12,12 @@ public final class AllayClaimService {
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
+    private final AllayDisplayService displayService;
 
-    public AllayClaimService(UsefulAllaysPlugin plugin, AllayRepository repository) {
+    public AllayClaimService(UsefulAllaysPlugin plugin, AllayRepository repository, AllayDisplayService displayService) {
         this.plugin = plugin;
         this.repository = repository;
+        this.displayService = displayService;
     }
 
     public ClaimResult claim(Player player, Allay allay) {
@@ -39,23 +40,8 @@ public final class AllayClaimService {
         }
 
         repository.claim(allay, owner, player.getName());
-        applyDisplayName(player, allay);
+        displayService.applyDisplayName(player, allay);
         return new ClaimResult(ClaimResult.Status.CLAIMED, limit);
-    }
-
-    public void applyDisplayName(Player owner, Allay allay) {
-        if (!plugin.settings().showName()) {
-            allay.setCustomNameVisible(false);
-            return;
-        }
-
-        int level = repository.levelOf(allay);
-        String name = plugin.settings().nameFormat()
-                .replace("{owner}", owner.getName())
-                .replace("{level}", String.valueOf(level));
-
-        allay.setCustomName(MessageService.color(name));
-        allay.setCustomNameVisible(true);
     }
 
     public void sendClaimResult(Player player, ClaimResult result) {

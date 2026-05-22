@@ -1,7 +1,6 @@
 package at.slini204.usefulallays.service;
 
 import at.slini204.usefulallays.UsefulAllaysPlugin;
-import at.slini204.usefulallays.config.MessageService;
 import at.slini204.usefulallays.data.AllayRepository;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -9,7 +8,7 @@ import org.bukkit.entity.Allay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -17,10 +16,12 @@ public final class AllayUpgradeService {
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
+    private final AllayDisplayService displayService;
 
-    public AllayUpgradeService(UsefulAllaysPlugin plugin, AllayRepository repository) {
+    public AllayUpgradeService(UsefulAllaysPlugin plugin, AllayRepository repository, AllayDisplayService displayService) {
         this.plugin = plugin;
         this.repository = repository;
+        this.displayService = displayService;
     }
 
     public UpgradeResult upgrade(Player player, Allay allay) {
@@ -31,19 +32,23 @@ public final class AllayUpgradeService {
             return UpgradeResult.MAX_LEVEL;
         }
 
-        Map<Material, Integer> cost = readCost(nextLevel);
+        Map<Material, Integer> cost = costForLevel(nextLevel);
         if (!hasItems(player, cost)) {
             return UpgradeResult.MISSING_ITEMS;
         }
 
         removeItems(player, cost);
         repository.setLevel(allay, nextLevel);
-        applyDisplayName(player, allay, nextLevel);
+        displayService.applyDisplayName(player, allay);
         return UpgradeResult.UPGRADED;
     }
 
-    private Map<Material, Integer> readCost(int level) {
-        Map<Material, Integer> cost = new HashMap<>();
+    public Map<Material, Integer> costForNextLevel(Allay allay) {
+        return costForLevel(repository.levelOf(allay) + 1);
+    }
+
+    public Map<Material, Integer> costForLevel(int level) {
+        Map<Material, Integer> cost = new LinkedHashMap<>();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("upgradeCosts." + level + ".items");
         if (section == null) {
             return cost;
@@ -59,7 +64,7 @@ public final class AllayUpgradeService {
         return cost;
     }
 
-    private boolean hasItems(Player player, Map<Material, Integer> cost) {
+    public boolean hasItems(Player player, Map<Material, Integer> cost) {
         for (Map.Entry<Material, Integer> entry : cost.entrySet()) {
             if (count(player, entry.getKey()) < entry.getValue()) {
                 return false;
@@ -68,7 +73,7 @@ public final class AllayUpgradeService {
         return true;
     }
 
-    private int count(Player player, Material material) {
+    public int count(Player player, Material material) {
         int amount = 0;
         for (ItemStack stack : player.getInventory().getContents()) {
             if (stack != null && stack.getType() == material) {
@@ -98,19 +103,6 @@ public final class AllayUpgradeService {
             }
             player.getInventory().setContents(contents);
         }
-    }
-
-    private void applyDisplayName(Player owner, Allay allay, int level) {
-        if (!plugin.settings().showName()) {
-            return;
-        }
-
-        String name = plugin.settings().nameFormat()
-                .replace("{owner}", owner.getName())
-                .replace("{level}", String.valueOf(level));
-
-        allay.setCustomName(MessageService.color(name));
-        allay.setCustomNameVisible(true);
     }
 
     public enum UpgradeResult {

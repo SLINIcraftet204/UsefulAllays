@@ -9,7 +9,7 @@ website: https://github.com/SLINIcraftet204/UsefulAllays
 commands:
   usefulallays:
     description: Main command for UsefulAllays.
-    usage: /usefulallays [reload|list]
+    usage: /usefulallays [reload|list|rename]
     aliases: [ua]
     permission: usefulallays.command
 
@@ -25,6 +25,9 @@ permissions:
     default: true
   usefulallays.upgrade:
     description: Allows upgrading owned Allays.
+    default: true
+  usefulallays.rename:
+    description: Allows renaming owned Allays.
     default: true
   usefulallays.admin.reload:
     description: Allows reloading UsefulAllays.

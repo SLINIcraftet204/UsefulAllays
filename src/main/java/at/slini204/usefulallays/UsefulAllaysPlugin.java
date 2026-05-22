@@ -10,6 +10,7 @@ import at.slini204.usefulallays.listener.AllayInteractListener;
 import at.slini204.usefulallays.listener.PlayerMovementListener;
 import at.slini204.usefulallays.service.AllayClaimService;
 import at.slini204.usefulallays.service.AllayCollectionService;
+import at.slini204.usefulallays.service.AllayDisplayService;
 import at.slini204.usefulallays.service.AllayFollowService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
 import org.bukkit.command.PluginCommand;
@@ -22,6 +23,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
     private PluginSettings settings;
     private MessageService messages;
     private PdcAllayRepository repository;
+    private AllayDisplayService displayService;
     private AllayClaimService claimService;
     private AllayFollowService followService;
     private AllayCollectionService collectionService;
@@ -65,8 +67,9 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
         settings = PluginSettings.from(getConfig());
         messages = new MessageService(this);
         repository = new PdcAllayRepository(this);
-        claimService = new AllayClaimService(this, repository);
-        upgradeService = new AllayUpgradeService(this, repository);
+        displayService = new AllayDisplayService(this, repository);
+        claimService = new AllayClaimService(this, repository, displayService);
+        upgradeService = new AllayUpgradeService(this, repository, displayService);
         followService = new AllayFollowService(this, repository, settings);
         collectionService = new AllayCollectionService(this, repository, settings);
         allayGui = new AllayGui(this, repository, upgradeService);
@@ -86,7 +89,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
             return;
         }
 
-        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository);
+        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
     }
