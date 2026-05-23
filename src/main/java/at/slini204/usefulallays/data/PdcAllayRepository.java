@@ -1,7 +1,9 @@
 package at.slini204.usefulallays.data;
 
 import at.slini204.usefulallays.model.AllayMode;
+import at.slini204.usefulallays.util.LocationCodec;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -24,6 +26,7 @@ public final class PdcAllayRepository implements AllayRepository {
     private final NamespacedKey levelKey;
     private final NamespacedKey customNameKey;
     private final NamespacedKey modeKey;
+    private final NamespacedKey homeLocationKey;
     private final NamespacedKey filtersKey;
     private final NamespacedKey claimedAtKey;
 
@@ -33,6 +36,7 @@ public final class PdcAllayRepository implements AllayRepository {
         this.levelKey = new NamespacedKey(plugin, "level");
         this.customNameKey = new NamespacedKey(plugin, "custom_name");
         this.modeKey = new NamespacedKey(plugin, "mode");
+        this.homeLocationKey = new NamespacedKey(plugin, "home_location");
         this.filtersKey = new NamespacedKey(plugin, "filters");
         this.claimedAtKey = new NamespacedKey(plugin, "claimed_at");
     }
@@ -98,6 +102,7 @@ public final class PdcAllayRepository implements AllayRepository {
         pdc.remove(levelKey);
         pdc.remove(customNameKey);
         pdc.remove(modeKey);
+        pdc.remove(homeLocationKey);
         pdc.remove(filtersKey);
         pdc.remove(claimedAtKey);
         allay.setCustomName(null);
@@ -124,6 +129,27 @@ public final class PdcAllayRepository implements AllayRepository {
     @Override
     public void setMode(Allay allay, AllayMode mode) {
         allay.getPersistentDataContainer().set(modeKey, PersistentDataType.STRING, mode.name());
+    }
+
+    @Override
+    public Optional<Location> homeLocationOf(Allay allay) {
+        String raw = allay.getPersistentDataContainer().get(homeLocationKey, PersistentDataType.STRING);
+        return LocationCodec.decode(raw);
+    }
+
+    @Override
+    public void setHomeLocation(Allay allay, Location location) {
+        String encoded = LocationCodec.encode(location);
+        if (encoded.isBlank()) {
+            clearHomeLocation(allay);
+            return;
+        }
+        allay.getPersistentDataContainer().set(homeLocationKey, PersistentDataType.STRING, encoded);
+    }
+
+    @Override
+    public void clearHomeLocation(Allay allay) {
+        allay.getPersistentDataContainer().remove(homeLocationKey);
     }
 
     @Override

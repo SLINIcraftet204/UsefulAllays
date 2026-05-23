@@ -19,7 +19,9 @@ allay:
   protected: "&cThis Allay belongs to another player."
   guiOpened: "&7Opening Allay settings."
   list: "&7Loaded claimed Allays: &e{count}"
+  noOwnedAllayNearby: "&cThere is no owned Allay close enough."
   modeChanged: "&7Allay mode changed to &e{mode}&7."
+  homeSaved: "&7Allay home saved at &e{location}&7."
   upgraded: "&aYour Allay is now level &e{level}&a."
   maxLevel: "&eThis Allay is already at the highest configured level."
   missingUpgradeItems: "&cYou do not have the required items for this upgrade."
@@ -37,3 +39,6 @@ rename:
   tooLong: "&cThat name is too long. Maximum length: &e{max}&c characters."
   success: "&aRenamed your Allay to &e{name}&a."
   reset: "&eYour Allay name was reset."
+
+storage:
+  exported: "&aExported &e{count}&a loaded claimed Allays to &e{file}&a."

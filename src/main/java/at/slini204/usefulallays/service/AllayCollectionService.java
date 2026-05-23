@@ -5,6 +5,7 @@ import at.slini204.usefulallays.config.PluginSettings;
 import at.slini204.usefulallays.data.AllayRepository;
 import at.slini204.usefulallays.model.AllayMode;
 import at.slini204.usefulallays.model.LevelSettings;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Entity;
@@ -15,19 +16,22 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public final class AllayCollectionService {
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
+    private final AllayHomeService homeService;
     private PluginSettings settings;
     private BukkitTask task;
 
-    public AllayCollectionService(UsefulAllaysPlugin plugin, AllayRepository repository, PluginSettings settings) {
+    public AllayCollectionService(UsefulAllaysPlugin plugin, AllayRepository repository, PluginSettings settings, AllayHomeService homeService) {
         this.plugin = plugin;
         this.repository = repository;
         this.settings = settings;
+        this.homeService = homeService;
     }
 
     public void start() {
@@ -59,7 +63,7 @@ public final class AllayCollectionService {
             }
 
             AllayMode mode = repository.modeOf(allay);
-            if (mode == AllayMode.PASSIVE) {
+            if (!collectsInMode(mode)) {
                 continue;
             }
 
@@ -76,8 +80,28 @@ public final class AllayCollectionService {
                 continue;
             }
 
+            if (mode == AllayMode.COLLECT_AROUND_HOME && !isNearResolvedHome(owner, allay)) {
+                continue;
+            }
+
             collectNearbyItems(allay, owner, Set.copyOf(filters));
         }
+    }
+
+    private boolean collectsInMode(AllayMode mode) {
+        return mode == AllayMode.FOLLOW
+                || mode == AllayMode.COLLECT_AROUND_OWNER
+                || mode == AllayMode.COLLECT_AROUND_HOME;
+    }
+
+    private boolean isNearResolvedHome(Player owner, Allay allay) {
+        Optional<Location> home = homeService.resolveHome(owner, allay);
+        if (home.isEmpty() || home.get().getWorld() == null || !allay.getWorld().equals(home.get().getWorld())) {
+            return false;
+        }
+
+        double allowedDistance = Math.max(settings.homeReturnDistance(), settings.level(repository.levelOf(allay)).pickupRadius());
+        return allay.getLocation().distanceSquared(home.get()) <= allowedDistance * allowedDistance;
     }
 
     private void collectNearbyItems(Allay allay, Player owner, Set<Material> filters) {

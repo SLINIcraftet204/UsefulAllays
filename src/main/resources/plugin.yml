@@ -9,7 +9,7 @@ website: https://github.com/SLINIcraftet204/UsefulAllays
 commands:
   usefulallays:
     description: Main command for UsefulAllays.
-    usage: /usefulallays [reload|list|rename]
+    usage: /usefulallays [reload|list|info|sethome|rename|export]
     aliases: [ua]
     permission: usefulallays.command
 
@@ -29,8 +29,14 @@ permissions:
   usefulallays.rename:
     description: Allows renaming owned Allays.
     default: true
+  usefulallays.sethome:
+    description: Allows setting a manual home position for owned Allays.
+    default: true
   usefulallays.admin.reload:
     description: Allows reloading UsefulAllays.
+    default: op
+  usefulallays.admin.export:
+    description: Allows exporting the readable Allay storage mirror.
     default: op
   usefulallays.admin.bypass:
     description: Bypasses ownership checks.

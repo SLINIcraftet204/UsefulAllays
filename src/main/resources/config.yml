@@ -1,4 +1,4 @@
-configVersion: 1
+configVersion: 2
 
 claiming:
   enabled: true
@@ -23,6 +23,15 @@ follow:
   teleportOnJoin: true
   teleportOnRespawn: true
 
+# Home is used by STAY and COLLECT_AROUND_HOME.
+# Priority: player respawn point/bed -> nearby bed -> current Allay position.
+home:
+  usePlayerRespawnPoint: true
+  searchNearbyBeds: true
+  bedSearchRadius: 24
+  fallbackToCurrentLocation: true
+  returnDistance: 12.0
+
 protection:
   preventOtherPlayersInteract: true
   preventOtherPlayersDamage: true
@@ -42,6 +51,14 @@ collection:
     - REPEATING_COMMAND_BLOCK
     - STRUCTURE_BLOCK
     - STRUCTURE_VOID
+
+# PDC remains the real storage on the Allay entity.
+# This mirror is only a readable snapshot for admins/debugging/backups.
+storage:
+  mirror:
+    enabled: true
+    updateIntervalSeconds: 60
+    file: data/allays.yml
 
 levels:
   1:

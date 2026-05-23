@@ -1,6 +1,7 @@
 package at.slini204.usefulallays.data;
 
 import at.slini204.usefulallays.model.AllayMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Allay;
 
@@ -31,6 +32,12 @@ public interface AllayRepository {
     AllayMode modeOf(Allay allay);
 
     void setMode(Allay allay, AllayMode mode);
+
+    Optional<Location> homeLocationOf(Allay allay);
+
+    void setHomeLocation(Allay allay, Location location);
+
+    void clearHomeLocation(Allay allay);
 
     List<Material> filtersOf(Allay allay);
 

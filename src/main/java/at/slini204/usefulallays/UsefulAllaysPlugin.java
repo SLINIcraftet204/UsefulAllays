@@ -12,6 +12,8 @@ import at.slini204.usefulallays.service.AllayClaimService;
 import at.slini204.usefulallays.service.AllayCollectionService;
 import at.slini204.usefulallays.service.AllayDisplayService;
 import at.slini204.usefulallays.service.AllayFollowService;
+import at.slini204.usefulallays.service.AllayHomeService;
+import at.slini204.usefulallays.service.AllaySnapshotService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,9 +27,11 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
     private PdcAllayRepository repository;
     private AllayDisplayService displayService;
     private AllayClaimService claimService;
+    private AllayHomeService homeService;
     private AllayFollowService followService;
     private AllayCollectionService collectionService;
     private AllayUpgradeService upgradeService;
+    private AllaySnapshotService snapshotService;
     private AllayGui allayGui;
 
     @Override
@@ -41,6 +45,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
 
         followService.start();
         collectionService.start();
+        snapshotService.start();
 
         getLogger().info("UsefulAllays enabled. Make Allays more useful and more like pets.");
     }
@@ -53,14 +58,20 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
         if (collectionService != null) {
             collectionService.stop();
         }
+        if (snapshotService != null) {
+            snapshotService.stop();
+            snapshotService.writeNowSafely();
+        }
     }
 
     public void reloadPlugin() {
         reloadConfig();
         settings = PluginSettings.from(getConfig());
         messages.reload();
+        homeService.reload(settings);
         followService.reload(settings);
         collectionService.reload(settings);
+        snapshotService.reload(settings);
     }
 
     private void loadServices() {
@@ -70,9 +81,11 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
         displayService = new AllayDisplayService(this, repository);
         claimService = new AllayClaimService(this, repository, displayService);
         upgradeService = new AllayUpgradeService(this, repository, displayService);
-        followService = new AllayFollowService(this, repository, settings);
-        collectionService = new AllayCollectionService(this, repository, settings);
-        allayGui = new AllayGui(this, repository, upgradeService);
+        homeService = new AllayHomeService(this, repository, settings);
+        followService = new AllayFollowService(this, repository, settings, homeService);
+        collectionService = new AllayCollectionService(this, repository, settings, homeService);
+        snapshotService = new AllaySnapshotService(this, repository, settings);
+        allayGui = new AllayGui(this, repository, upgradeService, homeService);
     }
 
     private void registerListeners() {
@@ -89,7 +102,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
             return;
         }
 
-        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService);
+        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService, homeService, snapshotService);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
     }

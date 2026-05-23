@@ -4,7 +4,9 @@ import at.slini204.usefulallays.UsefulAllaysPlugin;
 import at.slini204.usefulallays.data.AllayRepository;
 import at.slini204.usefulallays.model.AllayMode;
 import at.slini204.usefulallays.model.LevelSettings;
+import at.slini204.usefulallays.service.AllayHomeService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
+import at.slini204.usefulallays.util.LocationCodec;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Allay;
@@ -22,6 +24,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class AllayGui implements Listener {
@@ -38,11 +41,13 @@ public final class AllayGui implements Listener {
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
     private final AllayUpgradeService upgradeService;
+    private final AllayHomeService homeService;
 
-    public AllayGui(UsefulAllaysPlugin plugin, AllayRepository repository, AllayUpgradeService upgradeService) {
+    public AllayGui(UsefulAllaysPlugin plugin, AllayRepository repository, AllayUpgradeService upgradeService, AllayHomeService homeService) {
         this.plugin = plugin;
         this.repository = repository;
         this.upgradeService = upgradeService;
+        this.homeService = homeService;
     }
 
     public void open(Player player, Allay allay) {
@@ -84,7 +89,11 @@ public final class AllayGui implements Listener {
         if (slot == MODE_SLOT) {
             AllayMode next = repository.modeOf(allay).next();
             repository.setMode(allay, next);
+            Optional<org.bukkit.Location> home = homeService.prepareHomeForMode(player, allay, next);
             plugin.messages().send(player, "allay.modeChanged", Map.of("mode", next.name()));
+            if (homeService.usesHome(next) && home.isPresent()) {
+                plugin.messages().send(player, "allay.homeSaved", Map.of("location", LocationCodec.readable(home.get())));
+            }
             refresh(player, event.getView().getTopInventory(), allay);
             return;
         }
@@ -158,11 +167,7 @@ public final class AllayGui implements Listener {
         int maxFilterSlots = Math.min(plugin.settings().level(level).filterSlots(), FILTER_SLOTS.length);
 
         inventory.setItem(INFO_SLOT, item(Material.AMETHYST_SHARD, "§bAllay Info", infoLore(player, allay, level, mode, filters, maxFilterSlots)));
-        inventory.setItem(MODE_SLOT, item(Material.COMPASS, "§bMode", List.of(
-                "§7Current mode: §e" + mode.name(),
-                "§8Click to cycle the mode.",
-                "§8PASSIVE disables item collection."
-        )));
+        inventory.setItem(MODE_SLOT, item(Material.COMPASS, "§bMode", modeLore(mode)));
         inventory.setItem(UPGRADE_SLOT, item(Material.EMERALD, "§aUpgrade", upgradeLore(player, allay)));
         inventory.setItem(RENAME_SLOT, item(Material.NAME_TAG, "§bRename", List.of(
                 "§7Rename the nearest owned Allay:",
@@ -196,16 +201,31 @@ public final class AllayGui implements Listener {
         }
     }
 
+    private List<String> modeLore(AllayMode mode) {
+        List<String> lore = new ArrayList<>();
+        lore.add("§7Current mode: §e" + mode.name());
+        lore.add("§8Click to cycle the mode.");
+        lore.add(" ");
+        lore.add("§eFOLLOW §8- §7follows you and can collect nearby filters.");
+        lore.add("§eSTAY §8- §7stays at home/bed, no collection.");
+        lore.add("§eCOLLECT_AROUND_OWNER §8- §7follows and collects near you.");
+        lore.add("§eCOLLECT_AROUND_HOME §8- §7stays and collects near home/bed.");
+        lore.add("§ePASSIVE §8- §7no collection, no auto-follow.");
+        return lore;
+    }
+
     private List<String> infoLore(Player player, Allay allay, int level, AllayMode mode, List<Material> filters, int maxFilterSlots) {
         LevelSettings levelSettings = plugin.settings().level(level);
         String owner = repository.ownerNameOf(allay).orElse(player.getName());
         String customName = repository.customNameOf(allay).orElse("-");
+        String home = repository.homeLocationOf(allay).map(LocationCodec::readable).orElse("-");
 
         List<String> lore = new ArrayList<>();
         lore.add("§7Owner: §e" + owner);
         lore.add("§7Custom name: §e" + customName);
         lore.add("§7Level: §e" + level + "§7/§e" + plugin.settings().highestConfiguredLevel());
         lore.add("§7Mode: §e" + mode.name());
+        lore.add("§7Home: §e" + home);
         lore.add("§7Filters: §e" + filters.size() + "§7/§e" + maxFilterSlots);
         lore.add("§7Pickup radius: §e" + levelSettings.pickupRadius());
         lore.add("§7Teleport distance: §e" + levelSettings.teleportDistance());

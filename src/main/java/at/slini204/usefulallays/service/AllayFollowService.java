@@ -10,17 +10,21 @@ import org.bukkit.entity.Allay;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.Optional;
+
 public final class AllayFollowService {
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
+    private final AllayHomeService homeService;
     private PluginSettings settings;
     private BukkitTask task;
 
-    public AllayFollowService(UsefulAllaysPlugin plugin, AllayRepository repository, PluginSettings settings) {
+    public AllayFollowService(UsefulAllaysPlugin plugin, AllayRepository repository, PluginSettings settings, AllayHomeService homeService) {
         this.plugin = plugin;
         this.repository = repository;
         this.settings = settings;
+        this.homeService = homeService;
     }
 
     public void start() {
@@ -34,6 +38,7 @@ public final class AllayFollowService {
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 teleportFarLoadedAllays(player);
             }
+            keepHomeAllaysNearHome();
         }, settings.followIntervalTicks(), settings.followIntervalTicks());
     }
 
@@ -51,7 +56,7 @@ public final class AllayFollowService {
 
     public void teleportFarLoadedAllays(Player player) {
         for (Allay allay : repository.findLoadedOwnedAllays(player.getUniqueId())) {
-            if (!shouldFollow(allay)) {
+            if (!shouldFollowPlayer(allay)) {
                 continue;
             }
 
@@ -64,7 +69,7 @@ public final class AllayFollowService {
             double configuredDistance = Math.max(settings.teleportAfterDistance(), levelSettings.teleportDistance());
 
             if (!allay.getWorld().equals(player.getWorld()) || allay.getLocation().distanceSquared(player.getLocation()) > configuredDistance * configuredDistance) {
-                teleportNear(player, allay);
+                teleportNear(player.getLocation(), allay);
             }
         }
     }
@@ -76,20 +81,49 @@ public final class AllayFollowService {
 
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             for (Allay allay : repository.findLoadedOwnedAllays(player.getUniqueId())) {
-                if (shouldFollow(allay) && !settings.isWorldDisabled(player.getWorld().getName())) {
-                    teleportNear(player, allay);
+                if (shouldFollowPlayer(allay) && !settings.isWorldDisabled(player.getWorld().getName())) {
+                    teleportNear(player.getLocation(), allay);
                 }
             }
         });
     }
 
-    private boolean shouldFollow(Allay allay) {
-        AllayMode mode = repository.modeOf(allay);
-        return mode != AllayMode.STAY && mode != AllayMode.PASSIVE && allay.isValid() && !allay.isDead();
+    private void keepHomeAllaysNearHome() {
+        double maxDistance = settings.homeReturnDistance();
+        double maxDistanceSquared = maxDistance * maxDistance;
+
+        for (Allay allay : repository.findLoadedClaimedAllays()) {
+            if (!isUsable(allay) || !homeService.usesHome(repository.modeOf(allay))) {
+                continue;
+            }
+
+            Optional<Location> home = homeService.resolveHome(allay);
+            if (home.isEmpty() || home.get().getWorld() == null || settings.isWorldDisabled(home.get().getWorld().getName())) {
+                continue;
+            }
+
+            Location homeLocation = home.get();
+            if (!allay.getWorld().equals(homeLocation.getWorld()) || allay.getLocation().distanceSquared(homeLocation) > maxDistanceSquared) {
+                teleportNear(homeLocation, allay);
+            }
+        }
     }
 
-    private void teleportNear(Player player, Allay allay) {
-        Location destination = player.getLocation().clone().add(1.0, 0.25, 1.0);
+    private boolean shouldFollowPlayer(Allay allay) {
+        if (!isUsable(allay)) {
+            return false;
+        }
+
+        AllayMode mode = repository.modeOf(allay);
+        return mode == AllayMode.FOLLOW || mode == AllayMode.COLLECT_AROUND_OWNER;
+    }
+
+    private boolean isUsable(Allay allay) {
+        return allay.isValid() && !allay.isDead();
+    }
+
+    private void teleportNear(Location location, Allay allay) {
+        Location destination = location.clone().add(1.0, 0.25, 1.0);
         allay.teleport(destination);
     }
 }

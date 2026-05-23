@@ -28,6 +28,11 @@ public final class PluginSettings {
     private final boolean teleportOnWorldChange;
     private final boolean teleportOnJoin;
     private final boolean teleportOnRespawn;
+    private final boolean homeUsePlayerRespawnPoint;
+    private final boolean homeSearchNearbyBeds;
+    private final int homeBedSearchRadius;
+    private final boolean homeFallbackToCurrentLocation;
+    private final double homeReturnDistance;
     private final boolean preventOtherPlayersInteract;
     private final boolean preventOtherPlayersDamage;
     private final boolean ownerCanDamage;
@@ -35,6 +40,9 @@ public final class PluginSettings {
     private final long collectionIntervalTicks;
     private final boolean collectionRequireLoadedOwner;
     private final int maxItemsPerAllayPerScan;
+    private final boolean storageMirrorEnabled;
+    private final long storageMirrorUpdateIntervalTicks;
+    private final String storageMirrorFile;
     private final Set<Material> collectionBlacklist;
     private final Set<String> disabledWorlds;
     private final Map<Integer, LevelSettings> levels;
@@ -54,6 +62,11 @@ public final class PluginSettings {
             boolean teleportOnWorldChange,
             boolean teleportOnJoin,
             boolean teleportOnRespawn,
+            boolean homeUsePlayerRespawnPoint,
+            boolean homeSearchNearbyBeds,
+            int homeBedSearchRadius,
+            boolean homeFallbackToCurrentLocation,
+            double homeReturnDistance,
             boolean preventOtherPlayersInteract,
             boolean preventOtherPlayersDamage,
             boolean ownerCanDamage,
@@ -61,6 +74,9 @@ public final class PluginSettings {
             long collectionIntervalTicks,
             boolean collectionRequireLoadedOwner,
             int maxItemsPerAllayPerScan,
+            boolean storageMirrorEnabled,
+            long storageMirrorUpdateIntervalTicks,
+            String storageMirrorFile,
             Set<Material> collectionBlacklist,
             Set<String> disabledWorlds,
             Map<Integer, LevelSettings> levels
@@ -79,6 +95,11 @@ public final class PluginSettings {
         this.teleportOnWorldChange = teleportOnWorldChange;
         this.teleportOnJoin = teleportOnJoin;
         this.teleportOnRespawn = teleportOnRespawn;
+        this.homeUsePlayerRespawnPoint = homeUsePlayerRespawnPoint;
+        this.homeSearchNearbyBeds = homeSearchNearbyBeds;
+        this.homeBedSearchRadius = homeBedSearchRadius;
+        this.homeFallbackToCurrentLocation = homeFallbackToCurrentLocation;
+        this.homeReturnDistance = homeReturnDistance;
         this.preventOtherPlayersInteract = preventOtherPlayersInteract;
         this.preventOtherPlayersDamage = preventOtherPlayersDamage;
         this.ownerCanDamage = ownerCanDamage;
@@ -86,6 +107,9 @@ public final class PluginSettings {
         this.collectionIntervalTicks = collectionIntervalTicks;
         this.collectionRequireLoadedOwner = collectionRequireLoadedOwner;
         this.maxItemsPerAllayPerScan = maxItemsPerAllayPerScan;
+        this.storageMirrorEnabled = storageMirrorEnabled;
+        this.storageMirrorUpdateIntervalTicks = storageMirrorUpdateIntervalTicks;
+        this.storageMirrorFile = storageMirrorFile;
         this.collectionBlacklist = collectionBlacklist;
         this.disabledWorlds = disabledWorlds;
         this.levels = levels;
@@ -109,6 +133,11 @@ public final class PluginSettings {
                 config.getBoolean("follow.teleportOnWorldChange", true),
                 config.getBoolean("follow.teleportOnJoin", true),
                 config.getBoolean("follow.teleportOnRespawn", true),
+                config.getBoolean("home.usePlayerRespawnPoint", true),
+                config.getBoolean("home.searchNearbyBeds", true),
+                clamp(config.getInt("home.bedSearchRadius", 24), 1, 64),
+                config.getBoolean("home.fallbackToCurrentLocation", true),
+                Math.max(1.0, config.getDouble("home.returnDistance", 12.0)),
                 config.getBoolean("protection.preventOtherPlayersInteract", true),
                 config.getBoolean("protection.preventOtherPlayersDamage", true),
                 config.getBoolean("protection.ownerCanDamage", false),
@@ -116,6 +145,9 @@ public final class PluginSettings {
                 Math.max(5L, config.getLong("collection.scanIntervalTicks", 30L)),
                 config.getBoolean("collection.requireLoadedOwner", true),
                 Math.max(1, config.getInt("collection.maxItemsPerAllayPerScan", 8)),
+                config.getBoolean("storage.mirror.enabled", true),
+                Math.max(20L, config.getLong("storage.mirror.updateIntervalSeconds", 60L) * 20L),
+                config.getString("storage.mirror.file", "data/allays.yml"),
                 readMaterialSet(config, "collection.blacklist"),
                 new HashSet<>(config.getStringList("worlds.disabled")),
                 readLevels(config)
@@ -163,6 +195,10 @@ public final class PluginSettings {
         }
         Material material = Material.matchMaterial(name.toUpperCase(Locale.ROOT));
         return material == null ? fallback : material;
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     public boolean claimingEnabled() {
@@ -221,6 +257,26 @@ public final class PluginSettings {
         return teleportOnRespawn;
     }
 
+    public boolean homeUsePlayerRespawnPoint() {
+        return homeUsePlayerRespawnPoint;
+    }
+
+    public boolean homeSearchNearbyBeds() {
+        return homeSearchNearbyBeds;
+    }
+
+    public int homeBedSearchRadius() {
+        return homeBedSearchRadius;
+    }
+
+    public boolean homeFallbackToCurrentLocation() {
+        return homeFallbackToCurrentLocation;
+    }
+
+    public double homeReturnDistance() {
+        return homeReturnDistance;
+    }
+
     public boolean preventOtherPlayersInteract() {
         return preventOtherPlayersInteract;
     }
@@ -247,6 +303,18 @@ public final class PluginSettings {
 
     public int maxItemsPerAllayPerScan() {
         return maxItemsPerAllayPerScan;
+    }
+
+    public boolean storageMirrorEnabled() {
+        return storageMirrorEnabled;
+    }
+
+    public long storageMirrorUpdateIntervalTicks() {
+        return storageMirrorUpdateIntervalTicks;
+    }
+
+    public String storageMirrorFile() {
+        return storageMirrorFile;
     }
 
     public Set<Material> collectionBlacklist() {
