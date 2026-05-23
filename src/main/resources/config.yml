@@ -1,19 +1,22 @@
-configVersion: 3
+configVersion: 4
 
 claiming:
   enabled: true
   item: ECHO_SHARD
   consumeItem: true
-  maxAllaysPerPlayer: 3
+  maxAllaysPerPlayer: 5
   allowClaimAlreadyHoldingItem: true
 
 display:
   showName: true
-  # Used until a player sets a nickname with /ua rename <nickname>.
+  # Base name for freshly claimed Allays before a nickname is set.
+  # Example with the default nameFormat: "Nils's Allay [Lv. 1]"
   defaultAllayName: "{owner}'s Allay"
-  # Used when the Allay has no nickname. Placeholders: {owner}, {allay}, {nickname}, {level}
+  # Used while the Allay has no nickname. Placeholders: {owner}, {allay}, {nickname}, {level}
+  # {allay} resolves to defaultAllayName here.
   nameFormat: "&b{allay} &7[Lv. {level}]"
-  # Used when the Allay has a nickname. The owner is intentionally smaller/subtle via gray text.
+  # Used only after a player explicitly sets a nickname with /ua rename, /ua nick or /ua nickname.
+  # Example: "Elly [Lv. 1] · Nils"
   # Minecraft name tags do not support true font sizes, so this uses low-priority gray owner text.
   nicknameNameFormat: "&b{allay} &7[Lv. {level}] &8· &7{owner}"
 
@@ -63,9 +66,13 @@ collection:
     - STRUCTURE_BLOCK
     - STRUCTURE_VOID
 
-# PDC remains the real storage on the Allay entity.
-# This mirror is only a readable snapshot for admins/debugging/backups.
+# Loaded Allays keep their real data on the entity via PDC.
+# Packed Allays need a small external file because the entity is removed while packed.
+# The mirror remains only a readable snapshot for admins/debugging/backups.
 storage:
+  # Actual storage for packed Allays because the entity is removed while packed.
+  packedFile: data/packed-allays.yml
+
   mirror:
     enabled: true
     updateIntervalSeconds: 60

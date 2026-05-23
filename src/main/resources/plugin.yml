@@ -9,7 +9,7 @@ website: https://github.com/SLINIcraftet204/UsefulAllays
 commands:
   usefulallays:
     description: Main command for UsefulAllays.
-    usage: /usefulallays [list|info|menu|call|mode|sethome|sendhome|rename|nick|reload|export]
+    usage: /usefulallays [overview|list|info|menu|call|pack|unpack|mode|sethome|sendhome|rename|nick|reload|export]
     aliases: [ua]
     permission: usefulallays.command
 
@@ -25,6 +25,9 @@ permissions:
     default: true
   usefulallays.call:
     description: Allows calling owned loaded Allays by command or GUI.
+    default: true
+  usefulallays.pack:
+    description: Allows packing and unpacking owned Allays.
     default: true
   usefulallays.upgrade:
     description: Allows upgrading owned Allays.
@@ -51,6 +54,9 @@ permissions:
     description: Example permission for external limit handling.
     default: false
   usefulallays.limit.5:
+    description: Example permission for external limit handling.
+    default: false
+  usefulallays.limit.10:
     description: Example permission for external limit handling.
     default: false
   usefulallays.limit.unlimited:

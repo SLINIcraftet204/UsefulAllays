@@ -30,9 +30,11 @@ public final class AllayDisplayService {
 
         int level = repository.levelOf(allay);
         String ownerName = repository.ownerNameOf(allay).orElse(fallbackOwnerName);
-        Optional<String> nickname = repository.customNameOf(allay);
-        String allayName = displayBaseName(allay, ownerName);
+        Optional<String> nickname = repository.customNameOf(allay)
+                .map(String::trim)
+                .filter(value -> !value.isBlank());
 
+        String allayName = nickname.orElseGet(() -> plugin.settings().defaultAllayName().replace("{owner}", ownerName));
         String template = nickname.isPresent()
                 ? plugin.settings().nicknameNameFormat()
                 : plugin.settings().nameFormat();

@@ -43,6 +43,7 @@ public final class PluginSettings {
     private final long collectionIntervalTicks;
     private final boolean collectionRequireLoadedOwner;
     private final int maxItemsPerAllayPerScan;
+    private final String storagePackedFile;
     private final boolean storageMirrorEnabled;
     private final long storageMirrorUpdateIntervalTicks;
     private final String storageMirrorFile;
@@ -80,6 +81,7 @@ public final class PluginSettings {
             long collectionIntervalTicks,
             boolean collectionRequireLoadedOwner,
             int maxItemsPerAllayPerScan,
+            String storagePackedFile,
             boolean storageMirrorEnabled,
             long storageMirrorUpdateIntervalTicks,
             String storageMirrorFile,
@@ -116,6 +118,7 @@ public final class PluginSettings {
         this.collectionIntervalTicks = collectionIntervalTicks;
         this.collectionRequireLoadedOwner = collectionRequireLoadedOwner;
         this.maxItemsPerAllayPerScan = maxItemsPerAllayPerScan;
+        this.storagePackedFile = storagePackedFile;
         this.storageMirrorEnabled = storageMirrorEnabled;
         this.storageMirrorUpdateIntervalTicks = storageMirrorUpdateIntervalTicks;
         this.storageMirrorFile = storageMirrorFile;
@@ -157,6 +160,7 @@ public final class PluginSettings {
                 Math.max(5L, config.getLong("collection.scanIntervalTicks", 30L)),
                 config.getBoolean("collection.requireLoadedOwner", true),
                 Math.max(1, config.getInt("collection.maxItemsPerAllayPerScan", 8)),
+                config.getString("storage.packedFile", "data/packed-allays.yml"),
                 config.getBoolean("storage.mirror.enabled", true),
                 Math.max(20L, config.getLong("storage.mirror.updateIntervalSeconds", 60L) * 20L),
                 config.getString("storage.mirror.file", "data/allays.yml"),
@@ -327,6 +331,10 @@ public final class PluginSettings {
 
     public int maxItemsPerAllayPerScan() {
         return maxItemsPerAllayPerScan;
+    }
+
+    public String storagePackedFile() {
+        return storagePackedFile;
     }
 
     public boolean storageMirrorEnabled() {

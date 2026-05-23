@@ -9,6 +9,7 @@ import at.slini204.usefulallays.service.AllayDisplayService;
 import at.slini204.usefulallays.service.AllayFollowService;
 import at.slini204.usefulallays.service.AllayHomeService;
 import at.slini204.usefulallays.service.AllaySnapshotService;
+import at.slini204.usefulallays.service.PackedAllayService;
 import at.slini204.usefulallays.util.LocationCodec;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -42,6 +43,7 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
     private final AllayHomeService homeService;
     private final AllayFollowService followService;
     private final AllaySnapshotService snapshotService;
+    private final PackedAllayService packedAllayService;
     private final AllayGui allayGui;
 
     public UsefulAllaysCommand(UsefulAllaysPlugin plugin,
@@ -50,6 +52,7 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
                                AllayHomeService homeService,
                                AllayFollowService followService,
                                AllaySnapshotService snapshotService,
+                               PackedAllayService packedAllayService,
                                AllayGui allayGui) {
         this.plugin = plugin;
         this.repository = repository;
@@ -57,6 +60,7 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
         this.homeService = homeService;
         this.followService = followService;
         this.snapshotService = snapshotService;
+        this.packedAllayService = packedAllayService;
         this.allayGui = allayGui;
     }
 
@@ -100,6 +104,18 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
                     return true;
                 }
                 sendAllayList(player, label);
+                return true;
+            }
+            case "overview", "allays", "rucksack" -> {
+                if (!(sender instanceof Player player)) {
+                    plugin.messages().send(sender, "plugin.playerOnly");
+                    return true;
+                }
+                if (!player.hasPermission("usefulallays.gui")) {
+                    plugin.messages().send(player, "plugin.noPermission");
+                    return true;
+                }
+                allayGui.openOverview(player);
                 return true;
             }
             case "info" -> {
@@ -154,6 +170,45 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
                     return true;
                 }
                 handleSendHomeCommand(player, args);
+                return true;
+            }
+            case "pack", "einpacken" -> {
+                if (!(sender instanceof Player player)) {
+                    plugin.messages().send(sender, "plugin.playerOnly");
+                    return true;
+                }
+                if (!player.hasPermission("usefulallays.pack")) {
+                    plugin.messages().send(player, "plugin.noPermission");
+                    return true;
+                }
+                Optional<Allay> selected = selectOwnedAllay(player, selectorFromArgs(args, 1));
+                if (selected.isEmpty()) {
+                    plugin.messages().send(player, "allay.noOwnedAllayLoaded");
+                    return true;
+                }
+                if (packedAllayService.pack(player, selected.get()) == PackedAllayService.PackResult.PACKED) {
+                    plugin.messages().send(player, "allay.packed");
+                } else {
+                    plugin.messages().send(player, "allay.packFailed");
+                }
+                return true;
+            }
+            case "unpack", "auspacken" -> {
+                if (!(sender instanceof Player player)) {
+                    plugin.messages().send(sender, "plugin.playerOnly");
+                    return true;
+                }
+                if (!player.hasPermission("usefulallays.pack")) {
+                    plugin.messages().send(player, "plugin.noPermission");
+                    return true;
+                }
+                Optional<Allay> unpacked = packedAllayService.unpack(player, args.length >= 2 ? selectorFromArgs(args, 1) : "first");
+                if (unpacked.isEmpty()) {
+                    plugin.messages().send(player, "allay.noPackedAllay");
+                    return true;
+                }
+                plugin.messages().send(player, "allay.unpacked");
+                allayGui.open(player, unpacked.get());
                 return true;
             }
             case "mode" -> {
@@ -229,33 +284,54 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
 
     private void sendHelp(CommandSender sender, String label) {
         sender.sendMessage("§bUsefulAllays §8- §7Make Allays more useful and more like pets.");
-        sender.sendMessage("§7Use §e/" + label + " list §8- §7shows loaded owned Allays with numbers.");
-        sender.sendMessage("§7Use §e/" + label + " menu [number/id/nickname] §8- §7opens the GUI without looking at the Allay.");
-        sender.sendMessage("§7Use §e/" + label + " call [all|number/id/nickname] §8- §7calls Allays to you.");
-        sender.sendMessage("§7Use §e/" + label + " mode <mode> [number/id/nickname] §8- §7changes mode by command.");
-        sender.sendMessage("§7Use §e/" + label + " sethome [number/id/nickname] §8- §7sets home for an Allay.");
-        sender.sendMessage("§7Use §e/" + label + " rename [number/id/current-nickname] <nickname> §8- §7sets the Allay nickname.");
+        sender.sendMessage("§7Use §e/" + label + " overview §8- §7opens a clean overview for loaded and packed Allays.");
+        sender.sendMessage("§7Use §e/" + label + " list §8- §7shows your Allays with simple numbers and names.");
+        sender.sendMessage("§7Use §e/" + label + " menu [number/name] §8- §7opens settings without looking at the Allay.");
+        sender.sendMessage("§7Use §e/" + label + " call [all|number/name] §8- §7calls Allays to you.");
+        sender.sendMessage("§7Use §e/" + label + " pack [number/name] §8- §7stores an Allay in your virtual bag.");
+        sender.sendMessage("§7Use §e/" + label + " unpack [number/name] §8- §7spawns a packed Allay near you.");
+        sender.sendMessage("§7Use §e/" + label + " rename [number/name] <nickname> §8- §7sets the Allay nickname.");
     }
 
     private void sendAllayList(Player player, String label) {
         List<Allay> allays = sortedOwnedAllays(player);
-        plugin.messages().send(player, "allay.list", Map.of("count", String.valueOf(allays.size())));
-        if (allays.isEmpty()) {
-            player.sendMessage("§8- §7No loaded owned Allays found.");
+        List<PackedAllayService.PackedAllay> packedAllays = packedAllayService.packedAllays(player);
+        plugin.messages().send(player, "allay.list", Map.of(
+                "count", String.valueOf(allays.size()),
+                "packed", String.valueOf(packedAllays.size())
+        ));
+
+        if (allays.isEmpty() && packedAllays.isEmpty()) {
+            player.sendMessage("§8- §7No loaded or packed Allays found.");
             return;
         }
 
-        for (int i = 0; i < allays.size(); i++) {
-            Allay allay = allays.get(i);
-            String displayName = displayNameForCommands(allay, player.getName());
-            String distance = readableDistance(player, allay);
-            player.sendMessage("§8" + (i + 1) + ". §e" + displayName
-                    + " §8(" + allay.getUniqueId().toString().substring(0, 8) + ")"
-                    + " §7Lv. §e" + repository.levelOf(allay)
-                    + " §7Mode: §e" + repository.modeOf(allay).name()
-                    + " §7Dist: §e" + distance);
+        if (!allays.isEmpty()) {
+            player.sendMessage("§bLoaded Allays");
+            for (int i = 0; i < allays.size(); i++) {
+                Allay allay = allays.get(i);
+                displayService.applyDisplayName(player, allay);
+                String displayName = displayNameForCommands(allay, player.getName());
+                String distance = readableDistance(player, allay);
+                player.sendMessage("§8#" + (i + 1) + " §e" + displayName
+                        + " §7Lv. §e" + repository.levelOf(allay)
+                        + " §7Mode: §e" + repository.modeOf(allay).name()
+                        + " §7Dist: §e" + distance);
+            }
         }
-        player.sendMessage("§8Tip: §7Use §e/" + label + " menu 1§7, §e/" + label + " call Elly§7 or §e/" + label + " mode follow Elly§7.");
+
+        if (!packedAllays.isEmpty()) {
+            player.sendMessage("§dPacked Allays");
+            for (int i = 0; i < packedAllays.size(); i++) {
+                PackedAllayService.PackedAllay packed = packedAllays.get(i);
+                player.sendMessage("§8#" + (i + 1) + " §d" + packed.displayName()
+                        + " §7Lv. §e" + packed.level()
+                        + " §7Mode: §e" + packed.mode().name()
+                        + " §7Filters: §e" + packed.filters().size());
+            }
+        }
+
+        player.sendMessage("§8Tip: §7Use §e/" + label + " overview§7, §e/" + label + " menu 1§7, §e/" + label + " call Elly§7 or §e/" + label + " pack 1§7.");
     }
 
     private void handleCallCommand(Player player, String[] args) {
@@ -324,9 +400,10 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
                 ? "-"
                 : filters.stream().map(Material::name).collect(Collectors.joining(", "));
 
+        displayService.applyDisplayName(player, allay);
         player.sendMessage("§bUsefulAllays §8» §7Allay Info");
-        player.sendMessage("§7UUID: §e" + allay.getUniqueId());
-        player.sendMessage("§7Owner: §e" + repository.ownerNameOf(allay).orElse("-") + " §8(" + repository.ownerOf(allay).map(Object::toString).orElse("-") + "§8)");
+        player.sendMessage("§7Name: §e" + displayNameForCommands(allay, player.getName()));
+        player.sendMessage("§7Owner: §e" + repository.ownerNameOf(allay).orElse("-"));
         player.sendMessage("§7Nickname: §e" + repository.customNameOf(allay).orElse("-"));
         player.sendMessage("§7Level: §e" + repository.levelOf(allay));
         player.sendMessage("§7Mode: §e" + repository.modeOf(allay).name());
@@ -504,11 +581,17 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
         if (args.length == 1) {
             List<String> suggestions = new ArrayList<>();
             String input = args[0].toLowerCase(Locale.ROOT);
+            addIfStartsWith(suggestions, "overview", input);
+            addIfStartsWith(suggestions, "allays", input);
             addIfStartsWith(suggestions, "list", input);
             addIfStartsWith(suggestions, "info", input);
             addIfStartsWith(suggestions, "menu", input);
             addIfStartsWith(suggestions, "call", input);
             addIfStartsWith(suggestions, "mode", input);
+            if (sender.hasPermission("usefulallays.pack")) {
+                addIfStartsWith(suggestions, "pack", input);
+                addIfStartsWith(suggestions, "unpack", input);
+            }
             if (sender.hasPermission("usefulallays.sethome")) {
                 addIfStartsWith(suggestions, "sethome", input);
                 addIfStartsWith(suggestions, "sendhome", input);
@@ -536,7 +619,7 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
             return suggestions;
         }
 
-        if ((args.length == 2 && List.of("info", "menu", "gui", "sethome", "sendhome", "call", "recall", "ruf", "bring").contains(args[0].toLowerCase(Locale.ROOT)))
+        if ((args.length == 2 && List.of("info", "menu", "gui", "sethome", "sendhome", "call", "recall", "ruf", "bring", "pack", "einpacken").contains(args[0].toLowerCase(Locale.ROOT)))
                 || (args.length == 3 && args[0].equalsIgnoreCase("mode"))) {
             if (!(sender instanceof Player player)) {
                 return List.of();
@@ -551,7 +634,6 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
             List<Allay> allays = sortedOwnedAllays(player);
             for (int i = 0; i < allays.size(); i++) {
                 addIfStartsWith(suggestions, String.valueOf(i + 1), input);
-                addIfStartsWith(suggestions, allays.get(i).getUniqueId().toString().substring(0, 8), input);
                 repository.customNameOf(allays.get(i)).ifPresent(name -> addIfStartsWith(suggestions, name, input));
             }
             return suggestions;
@@ -565,7 +647,6 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
                 List<Allay> allays = sortedOwnedAllays(player);
                 for (int i = 0; i < allays.size(); i++) {
                     addIfStartsWith(suggestions, String.valueOf(i + 1), input);
-                    addIfStartsWith(suggestions, allays.get(i).getUniqueId().toString().substring(0, 8), input);
                     repository.customNameOf(allays.get(i)).ifPresent(name -> addIfStartsWith(suggestions, name, input));
                 }
             }
@@ -576,6 +657,21 @@ public final class UsefulAllaysCommand implements CommandExecutor, TabCompleter 
             String input = args[2].toLowerCase(Locale.ROOT);
             List<String> suggestions = new ArrayList<>();
             addIfStartsWith(suggestions, "reset", input);
+            return suggestions;
+        }
+
+
+        if (args.length == 2 && List.of("unpack", "auspacken").contains(args[0].toLowerCase(Locale.ROOT))) {
+            if (!(sender instanceof Player player)) {
+                return List.of();
+            }
+            String input = args[1].toLowerCase(Locale.ROOT);
+            List<String> suggestions = new ArrayList<>();
+            List<PackedAllayService.PackedAllay> packed = packedAllayService.packedAllays(player);
+            for (int i = 0; i < packed.size(); i++) {
+                addIfStartsWith(suggestions, String.valueOf(i + 1), input);
+                packed.get(i).nickname().ifPresent(name -> addIfStartsWith(suggestions, name, input));
+            }
             return suggestions;
         }
 

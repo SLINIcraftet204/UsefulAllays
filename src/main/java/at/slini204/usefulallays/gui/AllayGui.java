@@ -4,12 +4,15 @@ import at.slini204.usefulallays.UsefulAllaysPlugin;
 import at.slini204.usefulallays.data.AllayRepository;
 import at.slini204.usefulallays.model.AllayMode;
 import at.slini204.usefulallays.model.LevelSettings;
-import at.slini204.usefulallays.service.AllayHomeService;
+import at.slini204.usefulallays.service.AllayDisplayService;
 import at.slini204.usefulallays.service.AllayFollowService;
+import at.slini204.usefulallays.service.AllayHomeService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
+import at.slini204.usefulallays.service.PackedAllayService;
 import at.slini204.usefulallays.util.LocationCodec;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -23,6 +26,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,38 +36,59 @@ import java.util.UUID;
 public final class AllayGui implements Listener {
 
     private static final String TITLE = "UsefulAllays";
+    private static final String OVERVIEW_TITLE = "UsefulAllays - Overview";
     private static final int SIZE = 45;
+    private static final int OVERVIEW_SIZE = 54;
     private static final int INFO_SLOT = 4;
     private static final int MODE_SLOT = 10;
     private static final int CALL_SLOT = 12;
     private static final int HOME_SLOT = 14;
     private static final int UPGRADE_SLOT = 16;
+    private static final int PACK_SLOT = 29;
     private static final int RENAME_SLOT = 31;
+    private static final int OVERVIEW_SLOT = 33;
     private static final int CLOSE_SLOT = 44;
     private static final int[] FILTER_SLOTS = {18, 19, 20, 21, 22, 23, 24, 25, 26};
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
+    private final AllayDisplayService displayService;
     private final AllayUpgradeService upgradeService;
     private final AllayHomeService homeService;
     private final AllayFollowService followService;
+    private final PackedAllayService packedAllayService;
 
-    public AllayGui(UsefulAllaysPlugin plugin, AllayRepository repository, AllayUpgradeService upgradeService, AllayHomeService homeService, AllayFollowService followService) {
+    public AllayGui(UsefulAllaysPlugin plugin,
+                    AllayRepository repository,
+                    AllayDisplayService displayService,
+                    AllayUpgradeService upgradeService,
+                    AllayHomeService homeService,
+                    AllayFollowService followService,
+                    PackedAllayService packedAllayService) {
         this.plugin = plugin;
         this.repository = repository;
+        this.displayService = displayService;
         this.upgradeService = upgradeService;
         this.homeService = homeService;
         this.followService = followService;
+        this.packedAllayService = packedAllayService;
     }
 
     public void open(Player player, Allay allay) {
+        displayService.applyDisplayName(player, allay);
         AllayMenuHolder holder = new AllayMenuHolder(allay.getUniqueId());
         Inventory inventory = Bukkit.createInventory(holder, SIZE, TITLE);
         holder.setInventory(inventory);
         render(player, inventory, allay);
-
         player.openInventory(inventory);
-        plugin.messages().send(player, "allay.guiOpened");
+    }
+
+    public void openOverview(Player player) {
+        AllayOverviewHolder holder = new AllayOverviewHolder();
+        Inventory inventory = Bukkit.createInventory(holder, OVERVIEW_SIZE, OVERVIEW_TITLE);
+        holder.setInventory(inventory);
+        renderOverview(player, inventory, holder);
+        player.openInventory(inventory);
     }
 
     @EventHandler
@@ -70,7 +96,13 @@ public final class AllayGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (!(event.getView().getTopInventory().getHolder() instanceof AllayMenuHolder holder)) {
+
+        InventoryHolder topHolder = event.getView().getTopInventory().getHolder();
+        if (topHolder instanceof AllayOverviewHolder overviewHolder) {
+            handleOverviewClick(event, player, overviewHolder);
+            return;
+        }
+        if (!(topHolder instanceof AllayMenuHolder holder)) {
             return;
         }
 
@@ -169,12 +201,86 @@ public final class AllayGui implements Listener {
             return;
         }
 
+        if (slot == PACK_SLOT) {
+            if (!player.hasPermission("usefulallays.pack")) {
+                plugin.messages().send(player, "plugin.noPermission");
+                return;
+            }
+            PackedAllayService.PackResult result = packedAllayService.pack(player, allay);
+            if (result == PackedAllayService.PackResult.PACKED) {
+                plugin.messages().send(player, "allay.packed");
+                Bukkit.getScheduler().runTask(plugin, () -> openOverview(player));
+            } else {
+                plugin.messages().send(player, "allay.packFailed");
+            }
+            return;
+        }
+
         if (slot == RENAME_SLOT) {
             plugin.messages().send(player, "rename.guiHint");
             return;
         }
 
+        if (slot == OVERVIEW_SLOT) {
+            openOverview(player);
+            return;
+        }
+
         if (slot == CLOSE_SLOT) {
+            player.closeInventory();
+        }
+    }
+
+    private void handleOverviewClick(InventoryClickEvent event, Player player, AllayOverviewHolder holder) {
+        int topSize = event.getView().getTopInventory().getSize();
+        if (event.getRawSlot() >= topSize) {
+            if (event.isShiftClick()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+
+        event.setCancelled(true);
+        int slot = event.getRawSlot();
+        UUID loadedUuid = holder.loadedSlots().get(slot);
+        if (loadedUuid != null) {
+            Entity entity = Bukkit.getEntity(loadedUuid);
+            if (entity instanceof Allay allay && allay.isValid() && !allay.isDead()) {
+                if (event.isRightClick()) {
+                    AllayFollowService.SingleRecallResult result = followService.recallLoadedAllayToPlayer(player, allay, true);
+                    if (result == AllayFollowService.SingleRecallResult.MOVED) {
+                        plugin.messages().send(player, "allay.calledOne");
+                    } else {
+                        plugin.messages().send(player, "allay.callFailed");
+                    }
+                    renderOverview(player, event.getView().getTopInventory(), holder);
+                } else {
+                    open(player, allay);
+                }
+            } else {
+                renderOverview(player, event.getView().getTopInventory(), holder);
+            }
+            return;
+        }
+
+        String packedId = holder.packedSlots().get(slot);
+        if (packedId != null) {
+            if (!player.hasPermission("usefulallays.pack")) {
+                plugin.messages().send(player, "plugin.noPermission");
+                return;
+            }
+            Optional<Allay> unpacked = packedAllayService.unpack(player, packedId);
+            if (unpacked.isPresent()) {
+                plugin.messages().send(player, "allay.unpacked");
+                open(player, unpacked.get());
+            } else {
+                plugin.messages().send(player, "allay.noPackedAllay");
+                renderOverview(player, event.getView().getTopInventory(), holder);
+            }
+            return;
+        }
+
+        if (slot == OVERVIEW_SIZE - 1) {
             player.closeInventory();
         }
     }
@@ -184,7 +290,8 @@ public final class AllayGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) {
             return;
         }
-        if (!(event.getView().getTopInventory().getHolder() instanceof AllayMenuHolder)) {
+        InventoryHolder holder = event.getView().getTopInventory().getHolder();
+        if (!(holder instanceof AllayMenuHolder) && !(holder instanceof AllayOverviewHolder)) {
             return;
         }
 
@@ -196,12 +303,92 @@ public final class AllayGui implements Listener {
     }
 
     private void refresh(Player player, Inventory inventory, Allay allay) {
+        displayService.applyDisplayName(player, allay);
         render(player, inventory, allay);
         player.updateInventory();
     }
 
+    private void renderOverview(Player player, Inventory inventory, AllayOverviewHolder holder) {
+        inventory.clear();
+        holder.loadedSlots().clear();
+        holder.packedSlots().clear();
+
+        List<Allay> loaded = sortedOwnedAllays(player);
+        List<PackedAllayService.PackedAllay> packed = packedAllayService.packedAllays(player);
+        int slot = 0;
+        int number = 1;
+
+        for (Allay allay : loaded) {
+            if (slot >= OVERVIEW_SIZE - 9) {
+                break;
+            }
+            displayService.applyDisplayName(player, allay);
+            holder.loadedSlots().put(slot, allay.getUniqueId());
+            inventory.setItem(slot, loadedAllayIcon(player, allay, number));
+            slot++;
+            number++;
+        }
+
+        if (!loaded.isEmpty() && !packed.isEmpty() && slot < OVERVIEW_SIZE - 9) {
+            inventory.setItem(slot++, item(Material.GRAY_STAINED_GLASS_PANE, "§8Packed Allays", List.of("§7Packed Allays are stored", "§7in your virtual Allay bag.")));
+        }
+
+        int packedNumber = 1;
+        for (PackedAllayService.PackedAllay packedAllay : packed) {
+            if (slot >= OVERVIEW_SIZE - 9) {
+                break;
+            }
+            holder.packedSlots().put(slot, packedAllay.id());
+            inventory.setItem(slot, packedAllayIcon(packedAllay, packedNumber));
+            slot++;
+            packedNumber++;
+        }
+
+        inventory.setItem(OVERVIEW_SIZE - 5, item(Material.BOOK, "§bOverview", List.of(
+                "§7Loaded Allays: §e" + loaded.size(),
+                "§7Packed Allays: §e" + packed.size(),
+                "§7Left click loaded: open settings.",
+                "§7Right click loaded: call to you.",
+                "§7Left click packed: unpack."
+        )));
+        inventory.setItem(OVERVIEW_SIZE - 1, item(Material.BARRIER, "§cClose", List.of("§7Close this menu.")));
+    }
+
+    private ItemStack loadedAllayIcon(Player player, Allay allay, int number) {
+        String name = commandDisplayName(allay, player.getName());
+        List<Material> filters = repository.filtersOf(allay);
+        List<String> lore = new ArrayList<>();
+        lore.add("§8#" + number + " §7Loaded");
+        lore.add("§7Owner: §e" + repository.ownerNameOf(allay).orElse(player.getName()));
+        lore.add("§7Level: §e" + repository.levelOf(allay) + "§7/§e" + plugin.settings().highestConfiguredLevel());
+        lore.add("§7Mode: §e" + repository.modeOf(allay).name());
+        lore.add("§7Distance: §e" + readableDistance(player, allay));
+        lore.add("§7Filters: §e" + filters.size() + "§7/§e" + plugin.settings().level(repository.levelOf(allay)).filterSlots());
+        if (!filters.isEmpty()) {
+            lore.add("§8" + filters.stream().map(this::formatMaterial).reduce((left, right) -> left + ", " + right).orElse(""));
+        }
+        lore.add(" ");
+        lore.add("§eLeft click §7opens settings.");
+        lore.add("§eRight click §7calls it to you.");
+        return item(Material.ALLAY_SPAWN_EGG, "§b#" + number + " §f" + name, lore);
+    }
+
+    private ItemStack packedAllayIcon(PackedAllayService.PackedAllay packedAllay, int number) {
+        List<String> lore = new ArrayList<>();
+        lore.add("§8Packed #" + number);
+        lore.add("§7Owner: §e" + packedAllay.ownerName());
+        lore.add("§7Level: §e" + packedAllay.level() + "§7/§e" + plugin.settings().highestConfiguredLevel());
+        lore.add("§7Mode: §e" + packedAllay.mode().name());
+        lore.add("§7Filters: §e" + packedAllay.filters().size());
+        lore.add("§7Last world: §e" + packedAllay.lastWorld().map(World::getName).orElse("-"));
+        lore.add(" ");
+        lore.add("§eLeft click §7unpacks it near you.");
+        return item(Material.CHEST, "§dPacked #" + number + " §f" + packedAllay.displayName(), lore);
+    }
+
     private void render(Player player, Inventory inventory, Allay allay) {
         inventory.clear();
+        displayService.applyDisplayName(player, allay);
 
         int level = repository.levelOf(allay);
         AllayMode mode = repository.modeOf(allay);
@@ -223,12 +410,23 @@ public final class AllayGui implements Listener {
                 "§8location or this manual point."
         )));
         inventory.setItem(UPGRADE_SLOT, item(Material.EMERALD, "§aUpgrade", upgradeLore(player, allay)));
+        inventory.setItem(PACK_SLOT, item(Material.CHEST, "§dPack Allay", List.of(
+                "§7Stores this Allay in your",
+                "§7virtual Allay bag.",
+                "§8It will stop flying around",
+                "§8until you unpack it again."
+        )));
         inventory.setItem(RENAME_SLOT, item(Material.NAME_TAG, "§bRename", List.of(
                 "§7Set or change the nickname:",
                 "§e/ua rename <nickname>",
-                "§e/ua rename <number/id/current> <nickname>",
+                "§e/ua rename <number/name> <nickname>",
                 "§7Reset nickname:",
-                "§e/ua rename [number/id/nickname] reset"
+                "§e/ua rename [number/name] reset"
+        )));
+        inventory.setItem(OVERVIEW_SLOT, item(Material.BOOK, "§bAllay Overview", List.of(
+                "§7Shows all loaded and packed",
+                "§7Allays in one menu.",
+                "§eClick to open overview."
         )));
         inventory.setItem(CLOSE_SLOT, item(Material.BARRIER, "§cClose", List.of("§7Close this menu.")));
 
@@ -276,6 +474,7 @@ public final class AllayGui implements Listener {
         String home = repository.homeLocationOf(allay).map(LocationCodec::readable).orElse("-");
 
         List<String> lore = new ArrayList<>();
+        lore.add("§7Name: §e" + commandDisplayName(allay, player.getName()));
         lore.add("§7Owner: §e" + owner);
         lore.add("§7Nickname: §e" + nickname);
         lore.add("§7Level: §e" + level + "§7/§e" + plugin.settings().highestConfiguredLevel());
@@ -284,7 +483,7 @@ public final class AllayGui implements Listener {
         lore.add("§7Filters: §e" + filters.size() + "§7/§e" + maxFilterSlots);
         lore.add("§7Pickup radius: §e" + levelSettings.pickupRadius());
         lore.add("§7Teleport distance: §e" + levelSettings.teleportDistance());
-        lore.add("§8Claimed entity: " + allay.getUniqueId().toString().substring(0, 8));
+        lore.add("§8Use /ua overview for all Allays.");
         return lore;
     }
 
@@ -294,9 +493,9 @@ public final class AllayGui implements Listener {
         int highestLevel = plugin.settings().highestConfiguredLevel();
 
         List<String> lore = new ArrayList<>();
+        lore.add("§7Current level: §e" + currentLevel + "§7/§e" + highestLevel);
         if (nextLevel > highestLevel) {
             lore.add("§eThis Allay is already max level.");
-            lore.add("§7Current level: §e" + currentLevel);
             return lore;
         }
 
@@ -307,7 +506,7 @@ public final class AllayGui implements Listener {
         lore.add("§7Pickup radius: §e" + current.pickupRadius() + " §7→ §e" + next.pickupRadius());
         lore.add("§7Teleport distance: §e" + current.teleportDistance() + " §7→ §e" + next.teleportDistance());
         lore.add(" ");
-        lore.add("§7Required items:");
+        lore.add("§7Required for level §e" + nextLevel + "§7:");
 
         Map<Material, Integer> cost = upgradeService.costForNextLevel(allay);
         if (cost.isEmpty()) {
@@ -377,6 +576,37 @@ public final class AllayGui implements Listener {
         return -1;
     }
 
+    private List<Allay> sortedOwnedAllays(Player player) {
+        List<Allay> allays = new ArrayList<>(repository.findLoadedOwnedAllays(player.getUniqueId()));
+        allays.sort(Comparator
+                .comparing((Allay allay) -> !allay.getWorld().equals(player.getWorld()))
+                .thenComparingDouble(allay -> distanceSquaredSafe(player, allay))
+                .thenComparing(allay -> commandDisplayName(allay, player.getName())));
+        return allays;
+    }
+
+    private double distanceSquaredSafe(Player player, Allay allay) {
+        if (!allay.getWorld().equals(player.getWorld())) {
+            return Double.MAX_VALUE;
+        }
+        return allay.getLocation().distanceSquared(player.getLocation());
+    }
+
+    private String readableDistance(Player player, Allay allay) {
+        World playerWorld = player.getWorld();
+        World allayWorld = allay.getWorld();
+        if (!playerWorld.equals(allayWorld)) {
+            return allayWorld.getName();
+        }
+        return Math.round(Math.sqrt(allay.getLocation().distanceSquared(player.getLocation()))) + "m";
+    }
+
+    private String commandDisplayName(Allay allay, String fallbackOwnerName) {
+        return repository.customNameOf(allay)
+                .orElseGet(() -> plugin.settings().defaultAllayName()
+                        .replace("{owner}", repository.ownerNameOf(allay).orElse(fallbackOwnerName)));
+    }
+
     private ItemStack item(Material material, String name, List<String> lore) {
         ItemStack stack = new ItemStack(material);
         ItemMeta meta = stack.getItemMeta();
@@ -410,6 +640,29 @@ public final class AllayGui implements Listener {
 
         private UUID allayUuid() {
             return allayUuid;
+        }
+
+        private void setInventory(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+    }
+
+    private static final class AllayOverviewHolder implements InventoryHolder {
+        private final Map<Integer, UUID> loadedSlots = new HashMap<>();
+        private final Map<Integer, String> packedSlots = new HashMap<>();
+        private Inventory inventory;
+
+        private Map<Integer, UUID> loadedSlots() {
+            return loadedSlots;
+        }
+
+        private Map<Integer, String> packedSlots() {
+            return packedSlots;
         }
 
         private void setInventory(Inventory inventory) {

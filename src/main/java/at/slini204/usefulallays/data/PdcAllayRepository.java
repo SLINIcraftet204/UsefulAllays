@@ -87,6 +87,11 @@ public final class PdcAllayRepository implements AllayRepository {
         PersistentDataContainer pdc = allay.getPersistentDataContainer();
         pdc.set(ownerKey, PersistentDataType.STRING, ownerUuid.toString());
         pdc.set(ownerNameKey, PersistentDataType.STRING, ownerName);
+        // A freshly claimed Allay should use the normal claimed-name schema
+        // (for example "Nils's Allay [Lv. 1]").
+        // The nickname schema is only enabled after the player explicitly sets
+        // a nickname with /ua rename, /ua nick or /ua nickname.
+        pdc.remove(customNameKey);
         pdc.set(levelKey, PersistentDataType.INTEGER, 1);
         pdc.set(modeKey, PersistentDataType.STRING, AllayMode.FOLLOW.name());
         pdc.set(claimedAtKey, PersistentDataType.LONG, System.currentTimeMillis());

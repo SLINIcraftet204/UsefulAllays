@@ -18,7 +18,7 @@ claim:
 allay:
   protected: "&cThis Allay belongs to another player."
   guiOpened: "&7Opening Allay settings."
-  list: "&7Loaded claimed Allays: &e{count}"
+  list: "&7Loaded Allays: &e{count}&7, packed Allays: &d{packed}&7."
   noOwnedAllayNearby: "&cThere is no owned Allay close enough."
   noOwnedAllayLoaded: "&cNo loaded owned Allay was found. Use &e/ua list&c to see loaded Allays."
   callDisabled: "&cCalling Allays is currently disabled."
@@ -39,6 +39,10 @@ allay:
   filterLocked: "&eThis filter slot is locked. Upgrade the Allay to unlock more slots."
   filterAdded: "&aAdded &e{item}&a to this Allay's filters."
   filterRemoved: "&eRemoved &6{item}&e from this Allay's filters."
+  packed: "&dPacked this Allay into your virtual Allay bag."
+  unpacked: "&aUnpacked this Allay near you."
+  packFailed: "&cThis Allay could not be packed."
+  noPackedAllay: "&cNo packed Allay matched that number or nickname."
 
 rename:
   usage: "&eUse &6/{label} rename <nickname>&e, &6/{label} rename <number/id/current-nickname> <nickname>&e or &6/{label} rename reset&e."

@@ -15,6 +15,7 @@ import at.slini204.usefulallays.service.AllayFollowService;
 import at.slini204.usefulallays.service.AllayHomeService;
 import at.slini204.usefulallays.service.AllaySnapshotService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
+import at.slini204.usefulallays.service.PackedAllayService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,6 +32,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
     private AllayFollowService followService;
     private AllayCollectionService collectionService;
     private AllayUpgradeService upgradeService;
+    private PackedAllayService packedAllayService;
     private AllaySnapshotService snapshotService;
     private AllayGui allayGui;
 
@@ -79,13 +81,14 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
         messages = new MessageService(this);
         repository = new PdcAllayRepository(this);
         displayService = new AllayDisplayService(this, repository);
-        claimService = new AllayClaimService(this, repository, displayService);
+        packedAllayService = new PackedAllayService(this, repository, displayService);
+        claimService = new AllayClaimService(this, repository, displayService, packedAllayService);
         upgradeService = new AllayUpgradeService(this, repository, displayService);
         homeService = new AllayHomeService(this, repository, settings);
         followService = new AllayFollowService(this, repository, settings, homeService);
         collectionService = new AllayCollectionService(this, repository, settings, homeService);
         snapshotService = new AllaySnapshotService(this, repository, settings);
-        allayGui = new AllayGui(this, repository, upgradeService, homeService, followService);
+        allayGui = new AllayGui(this, repository, displayService, upgradeService, homeService, followService, packedAllayService);
     }
 
     private void registerListeners() {
@@ -102,7 +105,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
             return;
         }
 
-        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService, homeService, followService, snapshotService, allayGui);
+        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService, homeService, followService, snapshotService, packedAllayService, allayGui);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
     }
