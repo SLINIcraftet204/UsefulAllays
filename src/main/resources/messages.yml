@@ -20,6 +20,14 @@ allay:
   guiOpened: "&7Opening Allay settings."
   list: "&7Loaded claimed Allays: &e{count}"
   noOwnedAllayNearby: "&cThere is no owned Allay close enough."
+  noOwnedAllayLoaded: "&cNo loaded owned Allay was found. Use &e/ua list&c to see loaded Allays."
+  callDisabled: "&cCalling Allays is currently disabled."
+  called: "&aCalled &e{count}&a loaded Allay(s) to you. Skipped: &e{skipped}&a."
+  calledOne: "&aCalled this Allay to you."
+  callFailed: "&cThis Allay could not be called right now."
+  sentHome: "&aSent this Allay home."
+  sentHomeCount: "&aSent &e{count}&a loaded Allay(s) home."
+  noHome: "&cThis Allay has no usable home location."
   modeChanged: "&7Allay mode changed to &e{mode}&7."
   homeSaved: "&7Allay home saved at &e{location}&7."
   upgraded: "&aYour Allay is now level &e{level}&a."
@@ -42,3 +50,7 @@ rename:
 
 storage:
   exported: "&aExported &e{count}&a loaded claimed Allays to &e{file}&a."
+
+mode:
+  usage: "&eUse &6/{label} mode <follow|stay|collect_around_owner|collect_around_home|passive> [number/id/name]&e."
+  invalid: "&cInvalid mode. Use &eFOLLOW&c, &eSTAY&c, &eCOLLECT_AROUND_OWNER&c, &eCOLLECT_AROUND_HOME&c or &ePASSIVE&c."

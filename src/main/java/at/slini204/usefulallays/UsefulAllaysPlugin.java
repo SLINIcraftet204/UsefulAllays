@@ -85,7 +85,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
         followService = new AllayFollowService(this, repository, settings, homeService);
         collectionService = new AllayCollectionService(this, repository, settings, homeService);
         snapshotService = new AllaySnapshotService(this, repository, settings);
-        allayGui = new AllayGui(this, repository, upgradeService, homeService);
+        allayGui = new AllayGui(this, repository, upgradeService, homeService, followService);
     }
 
     private void registerListeners() {
@@ -102,7 +102,7 @@ public final class UsefulAllaysPlugin extends JavaPlugin {
             return;
         }
 
-        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService, homeService, snapshotService);
+        UsefulAllaysCommand executor = new UsefulAllaysCommand(this, repository, displayService, homeService, followService, snapshotService, allayGui);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
     }

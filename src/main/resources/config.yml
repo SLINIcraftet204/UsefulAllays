@@ -23,6 +23,14 @@ follow:
   teleportOnJoin: true
   teleportOnRespawn: true
 
+# Manual call/recall command.
+# /ua call calls loaded owned Allays to the player.
+# Home modes are skipped by default so STAY/COLLECT_AROUND_HOME are not pulled away accidentally.
+# Use /ua call all to force-call all loaded owned Allays.
+recall:
+  enabled: true
+  includeHomeModesByDefault: false
+
 # Home is used by STAY and COLLECT_AROUND_HOME.
 # Priority: player respawn point/bed -> nearby bed -> current Allay position.
 home:

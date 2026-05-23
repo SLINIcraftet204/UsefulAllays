@@ -5,6 +5,7 @@ import at.slini204.usefulallays.data.AllayRepository;
 import at.slini204.usefulallays.model.AllayMode;
 import at.slini204.usefulallays.model.LevelSettings;
 import at.slini204.usefulallays.service.AllayHomeService;
+import at.slini204.usefulallays.service.AllayFollowService;
 import at.slini204.usefulallays.service.AllayUpgradeService;
 import at.slini204.usefulallays.util.LocationCodec;
 import org.bukkit.Bukkit;
@@ -30,24 +31,28 @@ import java.util.UUID;
 public final class AllayGui implements Listener {
 
     private static final String TITLE = "UsefulAllays";
-    private static final int SIZE = 36;
+    private static final int SIZE = 45;
     private static final int INFO_SLOT = 4;
-    private static final int MODE_SLOT = 11;
-    private static final int UPGRADE_SLOT = 15;
+    private static final int MODE_SLOT = 10;
+    private static final int CALL_SLOT = 12;
+    private static final int HOME_SLOT = 14;
+    private static final int UPGRADE_SLOT = 16;
     private static final int RENAME_SLOT = 31;
-    private static final int CLOSE_SLOT = 35;
+    private static final int CLOSE_SLOT = 44;
     private static final int[] FILTER_SLOTS = {18, 19, 20, 21, 22, 23, 24, 25, 26};
 
     private final UsefulAllaysPlugin plugin;
     private final AllayRepository repository;
     private final AllayUpgradeService upgradeService;
     private final AllayHomeService homeService;
+    private final AllayFollowService followService;
 
-    public AllayGui(UsefulAllaysPlugin plugin, AllayRepository repository, AllayUpgradeService upgradeService, AllayHomeService homeService) {
+    public AllayGui(UsefulAllaysPlugin plugin, AllayRepository repository, AllayUpgradeService upgradeService, AllayHomeService homeService, AllayFollowService followService) {
         this.plugin = plugin;
         this.repository = repository;
         this.upgradeService = upgradeService;
         this.homeService = homeService;
+        this.followService = followService;
     }
 
     public void open(Player player, Allay allay) {
@@ -93,6 +98,43 @@ public final class AllayGui implements Listener {
             plugin.messages().send(player, "allay.modeChanged", Map.of("mode", next.name()));
             if (homeService.usesHome(next) && home.isPresent()) {
                 plugin.messages().send(player, "allay.homeSaved", Map.of("location", LocationCodec.readable(home.get())));
+            }
+            refresh(player, event.getView().getTopInventory(), allay);
+            return;
+        }
+
+        if (slot == CALL_SLOT) {
+            if (!player.hasPermission("usefulallays.call")) {
+                plugin.messages().send(player, "plugin.noPermission");
+                return;
+            }
+
+            AllayFollowService.SingleRecallResult result = followService.recallLoadedAllayToPlayer(player, allay, true);
+            if (result == AllayFollowService.SingleRecallResult.MOVED) {
+                plugin.messages().send(player, "allay.calledOne");
+            } else {
+                plugin.messages().send(player, "allay.callFailed");
+            }
+            refresh(player, event.getView().getTopInventory(), allay);
+            return;
+        }
+
+        if (slot == HOME_SLOT) {
+            if (!player.hasPermission("usefulallays.sethome")) {
+                plugin.messages().send(player, "plugin.noPermission");
+                return;
+            }
+
+            if (event.isRightClick()) {
+                boolean moved = followService.sendLoadedAllayHome(player, allay);
+                if (moved) {
+                    plugin.messages().send(player, "allay.sentHome");
+                } else {
+                    plugin.messages().send(player, "allay.noHome");
+                }
+            } else {
+                org.bukkit.Location home = homeService.setManualHome(player, allay).orElse(player.getLocation());
+                plugin.messages().send(player, "allay.homeSaved", Map.of("location", LocationCodec.readable(home)));
             }
             refresh(player, event.getView().getTopInventory(), allay);
             return;
@@ -168,6 +210,18 @@ public final class AllayGui implements Listener {
 
         inventory.setItem(INFO_SLOT, item(Material.AMETHYST_SHARD, "§bAllay Info", infoLore(player, allay, level, mode, filters, maxFilterSlots)));
         inventory.setItem(MODE_SLOT, item(Material.COMPASS, "§bMode", modeLore(mode)));
+        inventory.setItem(CALL_SLOT, item(Material.ENDER_PEARL, "§bCall to me", List.of(
+                "§7Teleports this loaded Allay",
+                "§7close to you.",
+                "§8Useful when the Allay is flying",
+                "§8around and hard to click."
+        )));
+        inventory.setItem(HOME_SLOT, item(Material.RESPAWN_ANCHOR, "§bHome", List.of(
+                "§7Left click: set home here.",
+                "§7Right click: send Allay home.",
+                "§8Home modes use bed/respawn",
+                "§8location or this manual point."
+        )));
         inventory.setItem(UPGRADE_SLOT, item(Material.EMERALD, "§aUpgrade", upgradeLore(player, allay)));
         inventory.setItem(RENAME_SLOT, item(Material.NAME_TAG, "§bRename", List.of(
                 "§7Rename the nearest owned Allay:",

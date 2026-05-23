@@ -10,6 +10,7 @@ import org.bukkit.entity.Allay;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.List;
 import java.util.Optional;
 
 public final class AllayFollowService {
@@ -88,6 +89,73 @@ public final class AllayFollowService {
         });
     }
 
+    public RecallResult recallLoadedAllaysToPlayer(Player player, boolean includeHomeModes) {
+        if (!settings.recallEnabled()) {
+            return new RecallResult(0, 0, 0);
+        }
+
+        int moved = 0;
+        int skippedMode = 0;
+        int skippedWorld = 0;
+
+        List<Allay> allays = repository.findLoadedOwnedAllays(player.getUniqueId());
+        for (Allay allay : allays) {
+            SingleRecallResult result = recallLoadedAllayToPlayer(player, allay, includeHomeModes);
+            switch (result) {
+                case MOVED -> moved++;
+                case SKIPPED_MODE -> skippedMode++;
+                case SKIPPED_WORLD -> skippedWorld++;
+                case INVALID -> {
+                    // Ignore invalid entities in command feedback. They disappear on the next loaded scan anyway.
+                }
+            }
+        }
+
+        return new RecallResult(moved, skippedMode, skippedWorld);
+    }
+
+    public SingleRecallResult recallLoadedAllayToPlayer(Player player, Allay allay, boolean includeHomeModes) {
+        if (!settings.recallEnabled()) {
+            return SingleRecallResult.SKIPPED_MODE;
+        }
+        if (!isUsable(allay)) {
+            return SingleRecallResult.INVALID;
+        }
+        if (settings.isWorldDisabled(player.getWorld().getName()) || settings.isWorldDisabled(allay.getWorld().getName())) {
+            return SingleRecallResult.SKIPPED_WORLD;
+        }
+        if (!includeHomeModes && homeService.usesHome(repository.modeOf(allay))) {
+            return SingleRecallResult.SKIPPED_MODE;
+        }
+
+        teleportNear(player.getLocation(), allay);
+        return SingleRecallResult.MOVED;
+    }
+
+    public boolean sendLoadedAllayHome(Player player, Allay allay) {
+        if (!isUsable(allay)) {
+            return false;
+        }
+
+        Optional<Location> home = homeService.resolveHome(player, allay);
+        if (home.isEmpty() || home.get().getWorld() == null || settings.isWorldDisabled(home.get().getWorld().getName())) {
+            return false;
+        }
+
+        teleportNear(home.get(), allay);
+        return true;
+    }
+
+    public int sendLoadedAllaysHome(Player player) {
+        int moved = 0;
+        for (Allay allay : repository.findLoadedOwnedAllays(player.getUniqueId())) {
+            if (sendLoadedAllayHome(player, allay)) {
+                moved++;
+            }
+        }
+        return moved;
+    }
+
     private void keepHomeAllaysNearHome() {
         double maxDistance = settings.homeReturnDistance();
         double maxDistanceSquared = maxDistance * maxDistance;
@@ -125,5 +193,15 @@ public final class AllayFollowService {
     private void teleportNear(Location location, Allay allay) {
         Location destination = location.clone().add(1.0, 0.25, 1.0);
         allay.teleport(destination);
+    }
+
+    public record RecallResult(int moved, int skippedMode, int skippedWorld) {
+    }
+
+    public enum SingleRecallResult {
+        MOVED,
+        SKIPPED_MODE,
+        SKIPPED_WORLD,
+        INVALID
     }
 }

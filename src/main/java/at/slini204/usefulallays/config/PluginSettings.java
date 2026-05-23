@@ -22,6 +22,8 @@ public final class PluginSettings {
     private final String defaultAllayName;
     private final String nameFormat;
     private final boolean followEnabled;
+    private final boolean recallEnabled;
+    private final boolean recallIncludeHomeModesByDefault;
     private final long followIntervalTicks;
     private final double teleportAfterDistance;
     private final boolean teleportOnPlayerTeleport;
@@ -56,6 +58,8 @@ public final class PluginSettings {
             String defaultAllayName,
             String nameFormat,
             boolean followEnabled,
+            boolean recallEnabled,
+            boolean recallIncludeHomeModesByDefault,
             long followIntervalTicks,
             double teleportAfterDistance,
             boolean teleportOnPlayerTeleport,
@@ -89,6 +93,8 @@ public final class PluginSettings {
         this.defaultAllayName = defaultAllayName;
         this.nameFormat = nameFormat;
         this.followEnabled = followEnabled;
+        this.recallEnabled = recallEnabled;
+        this.recallIncludeHomeModesByDefault = recallIncludeHomeModesByDefault;
         this.followIntervalTicks = followIntervalTicks;
         this.teleportAfterDistance = teleportAfterDistance;
         this.teleportOnPlayerTeleport = teleportOnPlayerTeleport;
@@ -127,6 +133,8 @@ public final class PluginSettings {
                 config.getString("display.defaultAllayName", "{owner}'s Allay"),
                 config.getString("display.nameFormat", "&b{allay} &7[Lv. {level}]"),
                 config.getBoolean("follow.enabled", true),
+                config.getBoolean("recall.enabled", true),
+                config.getBoolean("recall.includeHomeModesByDefault", false),
                 Math.max(5L, config.getLong("follow.checkIntervalTicks", 40L)),
                 Math.max(1.0, config.getDouble("follow.teleportAfterDistance", 48.0)),
                 config.getBoolean("follow.teleportOnPlayerTeleport", true),
@@ -231,6 +239,14 @@ public final class PluginSettings {
 
     public boolean followEnabled() {
         return followEnabled;
+    }
+
+    public boolean recallEnabled() {
+        return recallEnabled;
+    }
+
+    public boolean recallIncludeHomeModesByDefault() {
+        return recallIncludeHomeModesByDefault;
     }
 
     public long followIntervalTicks() {
