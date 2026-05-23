@@ -224,10 +224,11 @@ public final class AllayGui implements Listener {
         )));
         inventory.setItem(UPGRADE_SLOT, item(Material.EMERALD, "§aUpgrade", upgradeLore(player, allay)));
         inventory.setItem(RENAME_SLOT, item(Material.NAME_TAG, "§bRename", List.of(
-                "§7Rename the nearest owned Allay:",
-                "§e/ua rename <name>",
-                "§7Reset name:",
-                "§e/ua rename reset"
+                "§7Set or change the nickname:",
+                "§e/ua rename <nickname>",
+                "§e/ua rename <number/id/current> <nickname>",
+                "§7Reset nickname:",
+                "§e/ua rename [number/id/nickname] reset"
         )));
         inventory.setItem(CLOSE_SLOT, item(Material.BARRIER, "§cClose", List.of("§7Close this menu.")));
 
@@ -271,12 +272,12 @@ public final class AllayGui implements Listener {
     private List<String> infoLore(Player player, Allay allay, int level, AllayMode mode, List<Material> filters, int maxFilterSlots) {
         LevelSettings levelSettings = plugin.settings().level(level);
         String owner = repository.ownerNameOf(allay).orElse(player.getName());
-        String customName = repository.customNameOf(allay).orElse("-");
+        String nickname = repository.customNameOf(allay).orElse("-");
         String home = repository.homeLocationOf(allay).map(LocationCodec::readable).orElse("-");
 
         List<String> lore = new ArrayList<>();
         lore.add("§7Owner: §e" + owner);
-        lore.add("§7Custom name: §e" + customName);
+        lore.add("§7Nickname: §e" + nickname);
         lore.add("§7Level: §e" + level + "§7/§e" + plugin.settings().highestConfiguredLevel());
         lore.add("§7Mode: §e" + mode.name());
         lore.add("§7Home: §e" + home);

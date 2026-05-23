@@ -1,4 +1,4 @@
-configVersion: 2
+configVersion: 3
 
 claiming:
   enabled: true
@@ -9,10 +9,13 @@ claiming:
 
 display:
   showName: true
-  # Used until a player sets a custom name with /ua rename <name>.
+  # Used until a player sets a nickname with /ua rename <nickname>.
   defaultAllayName: "{owner}'s Allay"
-  # Placeholders: {owner}, {allay}, {level}
+  # Used when the Allay has no nickname. Placeholders: {owner}, {allay}, {nickname}, {level}
   nameFormat: "&b{allay} &7[Lv. {level}]"
+  # Used when the Allay has a nickname. The owner is intentionally smaller/subtle via gray text.
+  # Minecraft name tags do not support true font sizes, so this uses low-priority gray owner text.
+  nicknameNameFormat: "&b{allay} &7[Lv. {level}] &8· &7{owner}"
 
 follow:
   enabled: true

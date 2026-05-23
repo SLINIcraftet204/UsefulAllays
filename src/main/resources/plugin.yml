@@ -9,7 +9,7 @@ website: https://github.com/SLINIcraftet204/UsefulAllays
 commands:
   usefulallays:
     description: Main command for UsefulAllays.
-    usage: /usefulallays [list|info|menu|call|mode|sethome|sendhome|rename|reload|export]
+    usage: /usefulallays [list|info|menu|call|mode|sethome|sendhome|rename|nick|reload|export]
     aliases: [ua]
     permission: usefulallays.command
 

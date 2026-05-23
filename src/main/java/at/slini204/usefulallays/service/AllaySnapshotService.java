@@ -70,6 +70,7 @@ public final class AllaySnapshotService {
             yaml.set(path + ".entityUuid", allay.getUniqueId().toString());
             yaml.set(path + ".ownerUuid", repository.ownerOf(allay).map(Object::toString).orElse(""));
             yaml.set(path + ".ownerName", repository.ownerNameOf(allay).orElse(""));
+            yaml.set(path + ".nickname", repository.customNameOf(allay).orElse(""));
             yaml.set(path + ".customName", repository.customNameOf(allay).orElse(""));
             yaml.set(path + ".level", repository.levelOf(allay));
             yaml.set(path + ".mode", repository.modeOf(allay).name());

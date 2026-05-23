@@ -21,6 +21,7 @@ public final class PluginSettings {
     private final boolean showName;
     private final String defaultAllayName;
     private final String nameFormat;
+    private final String nicknameNameFormat;
     private final boolean followEnabled;
     private final boolean recallEnabled;
     private final boolean recallIncludeHomeModesByDefault;
@@ -57,6 +58,7 @@ public final class PluginSettings {
             boolean showName,
             String defaultAllayName,
             String nameFormat,
+            String nicknameNameFormat,
             boolean followEnabled,
             boolean recallEnabled,
             boolean recallIncludeHomeModesByDefault,
@@ -92,6 +94,7 @@ public final class PluginSettings {
         this.showName = showName;
         this.defaultAllayName = defaultAllayName;
         this.nameFormat = nameFormat;
+        this.nicknameNameFormat = nicknameNameFormat;
         this.followEnabled = followEnabled;
         this.recallEnabled = recallEnabled;
         this.recallIncludeHomeModesByDefault = recallIncludeHomeModesByDefault;
@@ -132,6 +135,7 @@ public final class PluginSettings {
                 config.getBoolean("display.showName", true),
                 config.getString("display.defaultAllayName", "{owner}'s Allay"),
                 config.getString("display.nameFormat", "&b{allay} &7[Lv. {level}]"),
+                config.getString("display.nicknameNameFormat", "&b{allay} &7[Lv. {level}] &8· &7{owner}"),
                 config.getBoolean("follow.enabled", true),
                 config.getBoolean("recall.enabled", true),
                 config.getBoolean("recall.includeHomeModesByDefault", false),
@@ -235,6 +239,10 @@ public final class PluginSettings {
 
     public String nameFormat() {
         return nameFormat;
+    }
+
+    public String nicknameNameFormat() {
+        return nicknameNameFormat;
     }
 
     public boolean followEnabled() {

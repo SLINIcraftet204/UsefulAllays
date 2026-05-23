@@ -41,12 +41,12 @@ allay:
   filterRemoved: "&eRemoved &6{item}&e from this Allay's filters."
 
 rename:
-  usage: "&eUse &6/{label} rename <name>&e or &6/{label} rename reset&e."
-  guiHint: "&7Use &e/ua rename <name>&7 near your Allay to rename it. Use &e/ua rename reset&7 to reset it."
+  usage: "&eUse &6/{label} rename <nickname>&e, &6/{label} rename <number/id/current-nickname> <nickname>&e or &6/{label} rename reset&e."
+  guiHint: "&7Use &e/ua rename <nickname>&7 or &e/ua rename <number/id/current-nickname> <nickname>&7. Nicknames can be used in commands like &e/ua call Elly&7."
   noOwnedAllayNearby: "&cThere is no owned Allay close enough to rename."
-  tooLong: "&cThat name is too long. Maximum length: &e{max}&c characters."
-  success: "&aRenamed your Allay to &e{name}&a."
-  reset: "&eYour Allay name was reset."
+  tooLong: "&cThat nickname is too long. Maximum length: &e{max}&c characters."
+  success: "&aRenamed your Allay to &e{name}&a. You can now use this nickname in commands."
+  reset: "&eYour Allay nickname was reset."
 
 storage:
   exported: "&aExported &e{count}&a loaded claimed Allays to &e{file}&a."
